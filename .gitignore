@@ -1,0 +1,36 @@
+# AI Coder configuration
+.claude/
+
+# WordPress Persistent Instances
+wordpress-instances/
+
+# Docker volumes and temporary files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node modules (if any local development)
+node_modules/
+
+# Environment files
+.env
+.env.local
+
+# Backup files
+*.backup
+*.bak
+*.tar.gz
+*.zip
+
+# Temporary files
+tmp/
+temp/
