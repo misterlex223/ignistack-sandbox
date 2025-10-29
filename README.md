@@ -9,6 +9,7 @@ A customized Flexy sandbox environment for developing applications using the Ign
 - **CMS**: WordPress with PHP 8.1 and SQLite database (no MySQL required!)
 - **Persistent WordPress**: Create multiple isolated WordPress instances with persistent data
 - **Synchronization**: `sync-fire-wp` plugin to synchronize WordPress Custom Post Types to Firestore
+- **Custom Content Management**: Advanced Custom Fields (ACF) plugin pre-installed for creating and managing custom post types and custom fields
 - **AI Tools**: Claude Code and CoSpec AI Markdown Editor
 - **Terminal**: WebTTY support with tmux for shared terminal sessions
 - **Version Control**: Git and GitHub CLI
@@ -24,6 +25,7 @@ A customized Flexy sandbox environment for developing applications using the Ign
 - WP-CLI (WordPress command-line interface)
 - PHP 8.1 with SQLite3 extension
 - SQLite Database Integration plugin for WordPress
+- Advanced Custom Fields (ACF) plugin for creating and managing custom post types and custom fields
 - ttyd and tmux for WebTTY functionality
 - CoSpec AI Markdown Editor (available on ports 9280/9281)
 

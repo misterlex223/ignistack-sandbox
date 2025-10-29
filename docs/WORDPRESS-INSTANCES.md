@@ -4,6 +4,11 @@
 
 The ignistack-sandbox now supports **persistent WordPress installations** that survive container restarts. This allows you to create multiple isolated WordPress environments for different purposes (development, testing, production staging, etc.).
 
+Each instance comes with essential plugins pre-installed, including:
+- **Advanced Custom Fields (ACF)** - For defining custom data structures
+- **sync-fire-wp** - For synchronizing WordPress content to Firestore
+- **SQLite Database Integration** - For database functionality without MySQL
+
 ## Key Features
 
 ✅ **Persistent Data** - WordPress files and SQLite database survive container restarts
@@ -526,7 +531,7 @@ cat > wordpress-instances/my-project/README.md <<EOF
 Development environment for client website redesign
 
 ## Plugins Installed
-- Advanced Custom Fields Pro
+- Advanced Custom Fields (pre-installed in sandbox)
 - WooCommerce
 - Custom sync-fire-wp plugin
 

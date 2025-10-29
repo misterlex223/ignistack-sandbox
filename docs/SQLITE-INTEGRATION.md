@@ -548,7 +548,12 @@ tar -czf wordpress-backup.tar.gz /path/to/wordpress/
 - **Jetpack:** Import failures (constraint violations)
 - **Wordfence:** BLOB column incompatibilities
 - **WooCommerce:** Concurrency issues with orders
-- **Advanced Custom Fields:** Works, but slower with large datasets
+
+**Well-Supported Plugins:**
+- **Advanced Custom Fields (ACF):** Works well with SQLite, included by default in IgniStack sandbox
+  - Perfect for defining custom data structures
+  - May be slower with very large datasets due to SQLite limitations
+  - Full functionality preserved in development environments
 
 **Testing Checklist:**
 - [ ] Test all plugins in staging environment

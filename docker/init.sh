@@ -198,19 +198,89 @@ fi
 if [ "$TABLES_EXIST" -eq 0 ]; then
     echo "WordPress not installed. Installing WordPress with default settings..."
     
-    # Determine the site URL based on environment variable or use localhost
+    # Determine the site URL based on environment variable or use localhost with default port 80
     # The host script can pass the external port via environment variable
-    SITE_URL="${WORDPRESS_SITE_URL:-http://localhost}"
+    if [ -n "$WORDPRESS_SITE_URL" ]; then
+        # Normalize the URL by removing port 80 if specified since it's the default HTTP port
+        if [ "$WORDPRESS_SITE_URL" = "http://localhost:80" ] || [ "$WORDPRESS_SITE_URL" = "https://localhost:80" ]; then
+            SITE_URL="http://localhost"
+        elif [[ "$WORDPRESS_SITE_URL" =~ ^https://localhost:80$ ]]; then
+            SITE_URL="https://localhost"
+        else
+            SITE_URL="$WORDPRESS_SITE_URL"
+        fi
+    else
+        # If PORT environment variable is set (by host scripts), use it; otherwise default to 80
+        EXTERNAL_PORT="${PORT:-80}"
+        if [ "$EXTERNAL_PORT" = "80" ]; then
+            SITE_URL="http://localhost"
+        else
+            SITE_URL="http://localhost:$EXTERNAL_PORT"
+        fi
+    fi
     
     echo "Installing WordPress with site URL: $SITE_URL"
     wp core install --path="$WORDPRESS_DIR" --url="$SITE_URL" --title="IgniStack Sandbox" --admin_user=admin --admin_password=password123 --admin_email=admin@example.com --skip-email
     if [ $? -eq 0 ]; then
         echo "WordPress installed successfully."
-    else
-        echo "WordPress installation failed."
+    
+        # Set permalink structure to 'post name' to enable proper REST API access at /wp-json/
+        echo "Setting permalink structure to 'post name'..."
+        wp option update permalink_structure '/%postname%/' --path="$WORDPRESS_DIR"
+        if [ $? -eq 0 ]; then
+            echo "Permalink structure set successfully."
+        else
+            echo "Failed to set permalink structure."
+        fi
     fi
 else
     echo "WordPress is already installed."
+    
+    # Update the site URL if it's different from what's configured
+    if [ -n "$WORDPRESS_SITE_URL" ]; then
+        # Normalize the URL by removing port 80 if specified since it's the default HTTP port
+        if [ "$WORDPRESS_SITE_URL" = "http://localhost:80" ] || [ "$WORDPRESS_SITE_URL" = "https://localhost:80" ]; then
+            NORMALIZED_SITE_URL="http://localhost"
+        elif [[ "$WORDPRESS_SITE_URL" =~ ^https://localhost:80$ ]]; then
+            NORMALIZED_SITE_URL="https://localhost"
+        else
+            NORMALIZED_SITE_URL="$WORDPRESS_SITE_URL"
+        fi
+        
+        CURRENT_SITE_URL=$(wp option get siteurl --path="$WORDPRESS_DIR" 2>/dev/null)
+        if [ "$CURRENT_SITE_URL" != "$NORMALIZED_SITE_URL" ]; then
+            echo "Updating site URL to: $NORMALIZED_SITE_URL"
+            wp option update siteurl "$NORMALIZED_SITE_URL" --path="$WORDPRESS_DIR"
+            wp option update home "$NORMALIZED_SITE_URL" --path="$WORDPRESS_DIR"
+        fi
+    else
+        # If no explicit site URL is provided, ensure the port is properly configured
+        EXTERNAL_PORT="${PORT:-80}"
+        if [ "$EXTERNAL_PORT" = "80" ]; then
+            EXPECTED_SITE_URL="http://localhost"
+        else
+            EXPECTED_SITE_URL="http://localhost:$EXTERNAL_PORT"
+        fi
+        
+        CURRENT_SITE_URL=$(wp option get siteurl --path="$WORDPRESS_DIR" 2>/dev/null)
+        if [ "$CURRENT_SITE_URL" != "$EXPECTED_SITE_URL" ]; then
+            echo "Updating site URL to: $EXPECTED_SITE_URL"
+            wp option update siteurl "$EXPECTED_SITE_URL" --path="$WORDPRESS_DIR"
+            wp option update home "$EXPECTED_SITE_URL" --path="$WORDPRESS_DIR"
+        fi
+    fi
+    
+    # Ensure permalinks are set to 'post name' structure for proper REST API access
+    CURRENT_PERMALINK=$(wp option get permalink_structure --path="$WORDPRESS_DIR" 2>/dev/null)
+    if [ "$CURRENT_PERMALINK" != "/%postname%/" ]; then
+        echo "Updating permalink structure to 'post name'..."
+        wp option update permalink_structure '/%postname%/' --path="$WORDPRESS_DIR"
+        if [ $? -eq 0 ]; then
+            echo "Permalink structure updated successfully."
+        else
+            echo "Failed to update permalink structure."
+        fi
+    fi
 fi
 
 # Ensure the sync-fire-wp plugin is in the right location and activate it
@@ -239,6 +309,66 @@ if [ -f "$PLUGIN_DIR/sync-fire.php" ]; then
     fi
 else
     echo "Warning: sync-fire-wp plugin not found at $PLUGIN_DIR/sync-fire.php"
+fi
+
+# Check if Advanced Custom Fields plugin is available and activate it if not already active
+ACF_PLUGIN_DIR="$WORDPRESS_DIR/wp-content/plugins/advanced-custom-fields"
+if [ -f "$ACF_PLUGIN_DIR/acf.php" ]; then
+    ACF_PLUGIN_STATUS=$(wp plugin status advanced-custom-fields --path="$WORDPRESS_DIR" 2>/dev/null | grep -o "Active")
+    if [ -z "$ACF_PLUGIN_STATUS" ]; then
+        echo "Activating Advanced Custom Fields plugin..."
+        wp plugin activate advanced-custom-fields --path="$WORDPRESS_DIR"
+        if [ $? -eq 0 ]; then
+            echo "Advanced Custom Fields plugin activated successfully."
+        else
+            echo "Failed to activate Advanced Custom Fields plugin."
+        fi
+    else
+        echo "Advanced Custom Fields plugin is already active."
+    fi
+else
+    echo "Warning: Advanced Custom Fields plugin not found at $ACF_PLUGIN_DIR/acf.php"
+fi
+
+# Check if ignis-schema-wp plugin is available and activate it if not already active
+SCHEMA_PLUGIN_DIR="$WORDPRESS_DIR/wp-content/plugins/ignis-schema-wp"
+if [ -f "$SCHEMA_PLUGIN_DIR/wordpress-schema-system.php" ]; then
+    # Ensure ACF is active first (required dependency)
+    if ! wp plugin is-active advanced-custom-fields --path="$WORDPRESS_DIR" 2>/dev/null; then
+        echo "Activating ACF plugin (required dependency for schema system)..."
+        wp plugin activate advanced-custom-fields --path="$WORDPRESS_DIR"
+    fi
+    
+    SCHEMA_PLUGIN_STATUS=$(wp plugin status ignis-schema-wp --path="$WORDPRESS_DIR" 2>/dev/null | grep -o "Active")
+    if [ -z "$SCHEMA_PLUGIN_STATUS" ]; then
+        echo "Activating ignis-schema-wp plugin..."
+        wp plugin activate ignis-schema-wp --path="$WORDPRESS_DIR"
+        if [ $? -eq 0 ]; then
+            echo "ignis-schema-wp plugin activated successfully."
+        else
+            echo "Failed to activate ignis-schema-wp plugin."
+        fi
+    else
+        echo "ignis-schema-wp plugin is already active."
+    fi
+    
+    # Copy example schemas if schemas directory is empty
+    SCHEMAS_DIR="$WORDPRESS_DIR/wp-content/schemas/post-types"
+    if [ -d "$SCHEMAS_DIR" ]; then
+        SCHEMA_COUNT=$(ls -1 "$SCHEMAS_DIR" 2>/dev/null | wc -l)
+        if [ "$SCHEMA_COUNT" -eq 0 ]; then
+            echo "Copying example schemas..."
+            PLUGIN_SCHEMAS_DIR="$SCHEMA_PLUGIN_DIR/schemas/post-types"
+            if [ -d "$PLUGIN_SCHEMAS_DIR" ]; then
+                cp "$PLUGIN_SCHEMAS_DIR"/*.yaml "$SCHEMAS_DIR/" 2>/dev/null || true
+                cp "$PLUGIN_SCHEMAS_DIR"/*.yml "$SCHEMAS_DIR/" 2>/dev/null || true
+                cp "$PLUGIN_SCHEMAS_DIR"/*.json "$SCHEMAS_DIR/" 2>/dev/null || true
+                echo "Example schemas copied to $SCHEMAS_DIR"
+            fi
+        fi
+    fi
+else
+    echo "Warning: ignis-schema-wp plugin not found at $SCHEMA_PLUGIN_DIR/wordpress-schema-system.php"
 fi
 
 # Start WordPress server after the base environment is set up

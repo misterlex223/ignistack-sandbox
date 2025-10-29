@@ -1,6 +1,6 @@
 # Multi-stage build for IgniStack Dev Sandbox (React + Firebase + WordPress with SQLite)
 # Extends the base Flexy Dev Sandbox image with IgniStack specific tools
-FROM flexy-dev-sandbox
+FROM ghcr.io/misterlex223/flexy-sandbox:latest
 
 # Set environment variables to avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -19,9 +19,18 @@ RUN sudo apt-get update && sudo apt-get install -y \
     php8.1-xml \
     php8.1-mbstring \
     php8.1-zip \
+    php8.1-dev \
     sqlite3 \
     unzip \
+    libyaml-dev \
     && sudo rm -rf /var/lib/apt/lists/*
+
+# Install YAML PHP extension
+# Install libyaml-dev first for yaml extension compilation
+RUN sudo apt-get update && sudo apt-get install -y libyaml-dev && \
+    sudo pecl install yaml && \
+    echo "extension=yaml.so" | sudo tee /etc/php/8.1/cli/conf.d/yaml.ini && \
+    sudo rm -rf /var/lib/apt/lists/*
 
 # Install WordPress CLI
 RUN curl -s -o /tmp/wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
@@ -39,6 +48,9 @@ RUN mkdir -p wordpress
 RUN wget https://wordpress.org/latest.tar.gz && \
     tar -xzf latest.tar.gz -C /home/flexy/wordpress --strip-components=1 && \
     rm latest.tar.gz
+
+# Create schemas directory
+RUN mkdir -p /home/flexy/wordpress/wp-content/schemas/post-types
 
 # Install the WordPress SQLite Database Integration plugin properly
 RUN git clone https://github.com/WordPress/sqlite-database-integration.git /tmp/sqlite-plugin && \
@@ -58,11 +70,30 @@ RUN curl -sS https://getcomposer.org/installer | php && \
     sudo mv composer.phar /usr/local/bin/composer && \
     sudo chmod +x /usr/local/bin/composer
 
+# Install Advanced Custom Fields plugin
+RUN mkdir -p /home/flexy/wordpress/wp-content/plugins && \
+    cd /tmp && \
+    wget https://downloads.wordpress.org/plugin/advanced-custom-fields.zip && \
+    unzip advanced-custom-fields.zip -d /home/flexy/wordpress/wp-content/plugins/ && \
+    rm advanced-custom-fields.zip
+
+# Clone the ignis-schema-wp plugin
+RUN git clone https://github.com/misterlex223/ignis-schema-wp.git /tmp/ignis-schema-wp && \
+    # Create plugin directory
+    sudo mkdir -p /home/flexy/wordpress/wp-content/plugins/ignis-schema-wp && \
+    # Move the actual plugin files from the subdirectory to the correct location
+    sudo cp -r /tmp/ignis-schema-wp/ignis-schema-wp/* /home/flexy/wordpress/wp-content/plugins/ignis-schema-wp && \
+    # Clean up temp directory
+    rm -rf /tmp/ignis-schema-wp
+
 # Clone the custom sync-fire-wp plugin
 RUN git clone https://github.com/misterlex223/sync-fire-wp.git /home/flexy/wordpress/wp-content/plugins/sync-fire-wp
 
 # Setup project directory
 WORKDIR /home/flexy/workspace
+
+# Create docs directory and copy documentation
+RUN mkdir -p /home/flexy/docs
 
 # Setup basic git config
 # RUN git config --global user.name "Flexy" && \
@@ -72,6 +103,9 @@ WORKDIR /home/flexy/workspace
 COPY docker/init.sh /tmp/init-ignistack.sh
 RUN sudo mv /tmp/init-ignistack.sh /usr/local/bin/init-ignistack.sh && \
     sudo chmod +x /usr/local/bin/init-ignistack.sh
+
+# Copy documentation files to container
+COPY docs/ACF-LLM.md /home/flexy/docs/ACF-LLM.md
 
 # Create start/stop scripts for WordPress
 COPY container-scripts/start-wp.sh /tmp/start-wp.sh

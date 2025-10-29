@@ -9,6 +9,7 @@ IgniStack Sandbox is a containerized development environment designed for buildi
 - **Backend Development**: Firebase CLI tools for Firebase backend and emulation
 - **CMS**: WordPress with PHP 8.1 and a key feature - SQLite database integration (no MySQL required!)
 - **Synchronization**: Custom `sync-fire-wp` plugin to synchronize WordPress Custom Post Types to Firestore
+- **Data Structures**: Advanced Custom Fields (ACF) plugin pre-installed for creating and managing custom post types and custom fields
 - **AI Tools**: Claude Code and CoSpec AI Markdown Editor integration
 - **Collaboration**: WebTTY support with tmux for shared terminal sessions
 - **Version Control**: Git and GitHub CLI integration
@@ -125,6 +126,7 @@ ignistack-sandbox/
 ### 3. WordPress CMS with SQLite:
 - PHP 8.1 with SQLite3 extension
 - WordPress SQLite Database Integration plugin (official WordPress project)
+- Advanced Custom Fields (ACF) plugin for creating and managing custom post types and custom fields
 - Custom `sync-fire-wp` plugin for Firestore synchronization
 - **Key feature**: WordPress configured to use SQLite instead of MySQL
 
