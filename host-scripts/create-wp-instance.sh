@@ -288,6 +288,7 @@ start_instance() {
 
     # Set environment variables
     docker_cmd="$docker_cmd -e WP_INSTANCE_NAME=$instance_name"
+    docker_cmd="$docker_cmd -e WORDPRESS_SITE_URL=http://localhost:${WP_PORT}"
     docker_cmd="$docker_cmd -e ENABLE_WEBTTY=true"
 
     if [ -n "$ANTHROPIC_TOKEN" ]; then

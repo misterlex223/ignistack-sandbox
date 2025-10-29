@@ -53,6 +53,11 @@ RUN git clone https://github.com/WordPress/sqlite-database-integration.git /tmp/
     mkdir -p /home/flexy/wordpress/wp-content/database && \
     rm -rf /tmp/sqlite-plugin
 
+# Install Composer for PHP dependency management
+RUN curl -sS https://getcomposer.org/installer | php && \
+    sudo mv composer.phar /usr/local/bin/composer && \
+    sudo chmod +x /usr/local/bin/composer
+
 # Clone the custom sync-fire-wp plugin
 RUN git clone https://github.com/misterlex223/sync-fire-wp.git /home/flexy/wordpress/wp-content/plugins/sync-fire-wp
 

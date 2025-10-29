@@ -303,6 +303,9 @@ fi
 # Build docker run command
 RUN_CMD="docker run -d --name $CONTAINER_NAME -p $HOST_PORT:80"
 
+# Add WordPress site URL environment variable to handle redirects properly
+RUN_CMD="$RUN_CMD -e WORDPRESS_SITE_URL=http://localhost:$HOST_PORT"
+
 # Add WordPress instance volume if specified
 if [ -n "$WP_INSTANCE_NAME" ]; then
     # Get script directory and create wordpress-instances path
