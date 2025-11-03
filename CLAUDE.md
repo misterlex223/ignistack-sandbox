@@ -234,7 +234,8 @@ Refer users to appropriate doc based on their question:
 
 - `WP_INSTANCE_NAME`: Triggers persistent WordPress mode
 - `WORDPRESS_DIR`: Set by init.sh, determines which WordPress to serve
-- `ANTHROPIC_AUTH_TOKEN`: Claude Code API access
+- `OPENAI_API_KEY`: IgnisAI plugin API access (Claude via OpenAI compatibility)
+- `ANTHROPIC_AUTH_TOKEN`: Claude Code CLI API access
 - `FIREBASE_TOKEN`: Firebase CLI authentication
 - `ENABLE_WEBTTY`: Starts ttyd web terminal
 - `MARKDOWN_DIR`: CoSpec AI workspace (default: `/home/flexy/workspace`)

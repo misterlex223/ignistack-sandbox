@@ -338,7 +338,7 @@ if [ -f "$SCHEMA_PLUGIN_DIR/wordpress-schema-system.php" ]; then
         echo "Activating ACF plugin (required dependency for schema system)..."
         wp plugin activate advanced-custom-fields --path="$WORDPRESS_DIR"
     fi
-    
+
     SCHEMA_PLUGIN_STATUS=$(wp plugin status ignis-schema-wp --path="$WORDPRESS_DIR" 2>/dev/null | grep -o "Active")
     if [ -z "$SCHEMA_PLUGIN_STATUS" ]; then
         echo "Activating ignis-schema-wp plugin..."
@@ -351,7 +351,7 @@ if [ -f "$SCHEMA_PLUGIN_DIR/wordpress-schema-system.php" ]; then
     else
         echo "ignis-schema-wp plugin is already active."
     fi
-    
+
     # Copy example schemas if schemas directory is empty
     SCHEMAS_DIR="$WORDPRESS_DIR/wp-content/schemas/post-types"
     if [ -d "$SCHEMAS_DIR" ]; then
@@ -369,6 +369,41 @@ if [ -f "$SCHEMA_PLUGIN_DIR/wordpress-schema-system.php" ]; then
     fi
 else
     echo "Warning: ignis-schema-wp plugin not found at $SCHEMA_PLUGIN_DIR/wordpress-schema-system.php"
+fi
+
+# Check if ignis-ai plugin is available and activate it if not already active
+IGNISAI_PLUGIN_DIR="$WORDPRESS_DIR/wp-content/plugins/ignis-ai"
+if [ -f "$IGNISAI_PLUGIN_DIR/ignis-ai.php" ]; then
+    # Ensure ACF is active first (recommended for full functionality)
+    if ! wp plugin is-active advanced-custom-fields --path="$WORDPRESS_DIR" 2>/dev/null; then
+        echo "Activating ACF plugin (recommended for IgnisAI)..."
+        wp plugin activate advanced-custom-fields --path="$WORDPRESS_DIR"
+    fi
+
+    IGNISAI_PLUGIN_STATUS=$(wp plugin status ignis-ai --path="$WORDPRESS_DIR" 2>/dev/null | grep -o "Active")
+    if [ -z "$IGNISAI_PLUGIN_STATUS" ]; then
+        echo "Activating ignis-ai plugin..."
+        wp plugin activate ignis-ai --path="$WORDPRESS_DIR"
+        if [ $? -eq 0 ]; then
+            echo "ignis-ai plugin activated successfully."
+
+            # Configure API key from environment if available
+            if [ -n "$OPENAI_API_KEY" ]; then
+                echo "Configuring IgnisAI with OPENAI_API_KEY..."
+                wp option update ignis_ai_enabled 1 --path="$WORDPRESS_DIR"
+                wp option update ignis_ai_auto_alt_text 1 --path="$WORDPRESS_DIR"
+                echo "IgnisAI configured successfully."
+            else
+                echo "Note: OPENAI_API_KEY not set. IgnisAI will need manual configuration."
+            fi
+        else
+            echo "Failed to activate ignis-ai plugin."
+        fi
+    else
+        echo "ignis-ai plugin is already active."
+    fi
+else
+    echo "Warning: ignis-ai plugin not found at $IGNISAI_PLUGIN_DIR/ignis-ai.php"
 fi
 
 # Start WordPress server after the base environment is set up

@@ -1,0 +1,145 @@
+{
+  "name": "ignistack-general",
+  "version": "1.0.0",
+  "description": "General IgniStack project documentation profile for React + Vite frontend, Firebase backend, and WordPress CMS with SQLite integration",
+  "documents": [
+    {
+      "name": "Project Overview",
+      "path": "README.md",
+      "purpose": "High-level introduction to the project architecture, tech stack, and quick start guide",
+      "prompt": "Create a comprehensive README.md for an IgniStack project that includes:\n\n1. **Project Title and Description**: Brief summary of what this project does\n2. **Tech Stack Overview**:\n   - Frontend: React + Vite\n   - Backend: Firebase (Authentication, Firestore, Cloud Functions)\n   - CMS: WordPress with SQLite database\n   - Synchronization: sync-fire-wp plugin for WordPress → Firestore\n3. **Key Features**: List the main features of this application\n4. **Prerequisites**: Node.js, Docker, Firebase CLI\n5. **Quick Start**: Step-by-step commands to get the development environment running\n6. **Project Structure**: Overview of main directories\n7. **Links to detailed documentation** in docs/ folder\n\nFormat: Markdown with clear sections, code blocks for commands, and a friendly tone for developers."
+    },
+    {
+      "name": "Development Setup Guide",
+      "path": "prompts/development-setup.md",
+      "purpose": "Detailed instructions for setting up the complete development environment",
+      "prompt": "Create a comprehensive development setup guide that covers:\n\n1. **System Requirements**: OS compatibility, Docker, Node.js versions\n2. **Initial Setup**:\n   - Clone repository\n   - Install dependencies\n   - Configure environment variables\n3. **WordPress Instance Creation**:\n   - Creating persistent WordPress instances\n   - Configuring ports\n   - Activating required plugins (ACF, sync-fire-wp)\n4. **Firebase Configuration**:\n   - Create/connect Firebase project\n   - Set up Firestore database\n   - Configure authentication methods\n   - Deploy Cloud Functions\n5. **Frontend Development**:\n   - Install React + Vite dependencies\n   - Configure Firebase SDK\n   - Set up development server\n6. **Verification Steps**: How to verify everything is working\n7. **Common Setup Issues**: Troubleshooting guide\n\nFormat: Step-by-step with code examples, screenshots where helpful, and clear verification checkpoints."
+    }
+  ],
+  "folders": [
+    {
+      "name": "Documentation",
+      "path": "prompts/",
+      "purpose": "Comprehensive project documentation covering architecture, workflows, and guides",
+      "documents": [
+        {
+          "name": "System Architecture",
+          "path": "prompts/architecture.md",
+          "purpose": "Detailed system architecture showing how React, Firebase, and WordPress components interact",
+          "prompt": "Create a comprehensive architecture document that explains:\n\n1. **Architecture Overview**: High-level diagram (in Mermaid or ASCII art) showing three main components\n2. **Component Breakdown**:\n   - **Frontend Layer**: React + Vite application structure\n   - **Backend Layer**: Firebase services (Auth, Firestore, Functions)\n   - **CMS Layer**: WordPress with SQLite database\n3. **Data Flow**:\n   - How data moves from WordPress → Firestore (via sync-fire-wp)\n   - How React app reads/writes to Firestore\n   - Authentication flow\n4. **Key Design Decisions**:\n   - Why SQLite for WordPress (development portability)\n   - Benefits of WordPress as headless CMS\n   - Firebase for real-time capabilities\n5. **Technology Integration Points**:\n   - WordPress Custom Post Types → Firestore collections\n   - ACF fields → Firestore document structure\n   - Firebase Authentication in React\n6. **Scalability Considerations**: When to migrate from SQLite to MySQL\n\nFormat: Technical documentation with diagrams, code snippets, and clear explanations suitable for developers."
+        },
+        {
+          "name": "WordPress Content Management",
+          "path": "prompts/wordpress-cms.md",
+          "purpose": "Guide for managing content in WordPress and how it syncs to Firebase",
+          "prompt": "Create a WordPress content management guide covering:\n\n1. **WordPress Admin Access**: URL, default credentials setup\n2. **Content Structure**:\n   - Using Advanced Custom Fields (ACF) to define custom post types\n   - Recommended field types for different data\n   - Best practices for structuring content\n3. **sync-fire-wp Plugin**:\n   - How the synchronization works\n   - Configuration options\n   - Which post types to sync\n   - Sync triggers and timing\n4. **Creating Content Schemas**:\n   - Example: Blog posts with metadata\n   - Example: Product catalog\n   - Example: Portfolio items\n5. **Content Workflow**:\n   - Draft → Review → Publish flow\n   - How published content appears in Firestore\n   - Updating and deleting content\n6. **Media Management**: Uploading and organizing images/files\n7. **Troubleshooting Sync Issues**: Common problems and solutions\n\nFormat: User-friendly guide with screenshots, step-by-step instructions, and practical examples."
+        },
+        {
+          "name": "Firebase Integration",
+          "path": "prompts/firebase-integration.md",
+          "purpose": "Detailed guide on Firebase services integration and data modeling",
+          "prompt": "Create a Firebase integration guide that covers:\n\n1. **Firebase Project Setup**:\n   - Creating a new Firebase project\n   - Enabling required services (Auth, Firestore, Functions)\n   - Security rules configuration\n2. **Firestore Data Model**:\n   - Collection structure from WordPress sync\n   - Document schema examples\n   - Indexing strategies\n   - Query patterns\n3. **Authentication Setup**:\n   - Supported auth providers (Email/Password, Google, etc.)\n   - Implementing auth in React components\n   - Protected routes\n   - User role management\n4. **Cloud Functions**:\n   - When to use Cloud Functions\n   - Example functions (triggers, HTTP endpoints)\n   - Deployment process\n   - Environment variables\n5. **Firebase SDK in React**:\n   - Installation and configuration\n   - Reading data from Firestore\n   - Real-time listeners\n   - Error handling\n6. **Local Development**:\n   - Using Firebase Emulators\n   - Testing without affecting production\n7. **Security Considerations**: Best practices for rules and authentication\n\nFormat: Technical guide with code examples, configuration snippets, and security recommendations."
+        },
+        {
+          "name": "React Frontend Development",
+          "path": "prompts/frontend-development.md",
+          "purpose": "Guide for developing the React + Vite frontend application",
+          "prompt": "Create a frontend development guide covering:\n\n1. **Project Structure**:\n   - Recommended folder organization\n   - Component architecture\n   - State management approach\n2. **Development Workflow**:\n   - Running dev server\n   - Hot module replacement\n   - Environment variables (.env files)\n3. **Firebase Integration**:\n   - Initializing Firebase SDK\n   - Auth context/hooks\n   - Firestore data fetching patterns\n   - Real-time updates with listeners\n4. **Component Patterns**:\n   - Authentication HOCs/hooks\n   - Data fetching components\n   - Error boundaries\n   - Loading states\n5. **Routing**:\n   - React Router setup\n   - Protected routes\n   - Navigation patterns\n6. **Styling**:\n   - CSS approach (modules, Tailwind, styled-components)\n   - Responsive design\n   - Theme management\n7. **Build and Deployment**:\n   - Production build process\n   - Firebase Hosting deployment\n   - Environment-specific configurations\n8. **Testing**: Unit tests, integration tests, and E2E testing strategies\n\nFormat: Developer guide with code examples, best practices, and practical patterns."
+        },
+        {
+          "name": "Deployment Guide",
+          "path": "prompts/deployment.md",
+          "purpose": "Instructions for deploying the application to production environments",
+          "prompt": "Create a deployment guide that covers:\n\n1. **Pre-Deployment Checklist**:\n   - Environment variables verification\n   - Security rules review\n   - Performance optimization\n   - Testing completion\n2. **Frontend Deployment**:\n   - Building React application for production\n   - Deploying to Firebase Hosting\n   - Custom domain setup\n   - SSL/TLS configuration\n3. **Firebase Backend Deployment**:\n   - Deploying Cloud Functions\n   - Firestore security rules deployment\n   - Environment configuration\n4. **WordPress Production Setup**:\n   - Migrating from SQLite to MySQL (if needed)\n   - WordPress hosting options\n   - Plugin configuration in production\n   - Backup strategies\n5. **CI/CD Pipeline**:\n   - GitHub Actions example\n   - Automated testing\n   - Automated deployment\n6. **Monitoring and Analytics**:\n   - Firebase Analytics setup\n   - Error tracking (Sentry, etc.)\n   - Performance monitoring\n7. **Rollback Procedures**: How to revert a deployment\n\nFormat: Step-by-step deployment guide with commands, configuration examples, and troubleshooting tips."
+        },
+        {
+          "name": "API Documentation",
+          "path": "prompts/api-reference.md",
+          "purpose": "Reference documentation for Cloud Functions, Firestore structure, and data APIs",
+          "prompt": "Create API reference documentation covering:\n\n1. **Firestore Collections**:\n   - Collection names and purposes\n   - Document structure for each collection\n   - Field types and constraints\n   - Required vs optional fields\n2. **Cloud Functions**:\n   - Function names and endpoints\n   - HTTP methods and parameters\n   - Request/response formats\n   - Authentication requirements\n   - Example requests (curl, JavaScript)\n3. **WordPress REST API** (if used):\n   - Available endpoints\n   - Custom post type endpoints\n   - Authentication\n4. **Data Synchronization**:\n   - WordPress field mapping to Firestore\n   - ACF field types → Firestore data types\n   - Sync timing and triggers\n5. **Error Codes**: Common error responses and their meanings\n6. **Rate Limits**: API usage limits and quotas\n7. **Versioning**: API version management strategy\n\nFormat: Technical API reference with schemas, examples, and clear parameter descriptions."
+        },
+        {
+          "name": "Testing Guide",
+          "path": "prompts/testing.md",
+          "purpose": "Comprehensive testing strategy and examples for all application layers",
+          "prompt": "Create a testing guide that covers:\n\n1. **Testing Strategy Overview**:\n   - Unit testing\n   - Integration testing\n   - End-to-end testing\n   - Manual testing checklists\n2. **Frontend Testing**:\n   - React component testing (Jest, React Testing Library)\n   - Mocking Firebase services\n   - Snapshot testing\n   - Accessibility testing\n3. **Backend Testing**:\n   - Cloud Functions unit tests\n   - Firestore rules testing\n   - Integration tests with emulators\n4. **WordPress Testing**:\n   - Plugin testing\n   - Content sync verification\n   - ACF configuration testing\n5. **Test Environment Setup**:\n   - Firebase emulators configuration\n   - Test data seeding\n   - Isolated test instances\n6. **Continuous Integration**:\n   - Running tests in CI/CD\n   - Code coverage requirements\n   - Automated testing workflows\n7. **Testing Best Practices**: Patterns to follow and anti-patterns to avoid\n\nFormat: Practical guide with code examples, test patterns, and setup instructions."
+        }
+      ]
+    },
+    {
+      "name": "Workflows",
+      "path": "prompts/workflows/",
+      "purpose": "Common development workflows and operational procedures",
+      "documents": [
+        {
+          "name": "Content Publishing Workflow",
+          "path": "prompts/workflows/content-publishing.md",
+          "purpose": "Step-by-step workflow for creating and publishing content from WordPress to production",
+          "prompt": "Create a content publishing workflow document that details:\n\n1. **Content Creation Process**:\n   - Access WordPress admin\n   - Create new custom post type\n   - Fill in ACF fields\n   - Add media/images\n   - Preview content\n2. **Review and Approval** (if applicable):\n   - Draft status\n   - Review checklist\n   - Approval process\n3. **Publishing**:\n   - Publish button action\n   - What happens behind the scenes (sync-fire-wp)\n   - Verification in Firestore\n   - Verification in React app\n4. **Content Updates**:\n   - Editing published content\n   - How updates sync\n   - Cache considerations\n5. **Content Removal**:\n   - Deleting posts\n   - Handling in Firestore\n   - Frontend behavior\n6. **Troubleshooting**:\n   - Content not appearing in app\n   - Sync delays\n   - Error recovery\n\nFormat: Step-by-step workflow with screenshots, checklists, and troubleshooting tips."
+        },
+        {
+          "name": "Feature Development Workflow",
+          "path": "prompts/workflows/feature-development.md",
+          "purpose": "Standard workflow for developing new features across the stack",
+          "prompt": "Create a feature development workflow that covers:\n\n1. **Planning Phase**:\n   - Feature requirements gathering\n   - Technical design decisions\n   - Data model planning\n2. **WordPress Setup** (if needed):\n   - Create/modify custom post types\n   - Define ACF field groups\n   - Test data creation\n3. **Firebase Configuration**:\n   - Firestore collection design\n   - Security rules updates\n   - Cloud Functions development\n4. **Frontend Development**:\n   - Component creation\n   - State management\n   - Firebase integration\n   - Styling\n5. **Testing**:\n   - Unit tests\n   - Integration tests\n   - Manual testing checklist\n6. **Code Review**: Review checklist and best practices\n7. **Deployment**:\n   - Staging deployment\n   - Production deployment\n   - Post-deployment verification\n8. **Documentation**: What to document after feature completion\n\nFormat: Practical workflow guide with checklists and examples."
+        },
+        {
+          "name": "Troubleshooting Procedures",
+          "path": "prompts/workflows/troubleshooting.md",
+          "purpose": "Common issues and systematic troubleshooting procedures",
+          "prompt": "Create a troubleshooting guide covering:\n\n1. **WordPress Issues**:\n   - Container won't start\n   - WordPress installation loop\n   - Plugin activation failures\n   - SQLite database errors\n   - Connection refused errors\n2. **Firebase Issues**:\n   - Authentication failures\n   - Permission denied errors\n   - Cloud Functions not triggering\n   - Quota/limit errors\n3. **Frontend Issues**:\n   - Build failures\n   - Firebase SDK errors\n   - Data not loading\n   - Deployment issues\n4. **Sync Issues**:\n   - WordPress content not appearing in Firestore\n   - Sync delays\n   - Data mismatch\n5. **Performance Issues**:\n   - Slow queries\n   - Memory issues\n   - Large database files\n6. **Systematic Debugging Approach**:\n   - Check logs (WordPress, Firebase, browser console)\n   - Verify configuration\n   - Test in isolation\n   - Common error messages and solutions\n\nFormat: Problem-solution format with diagnostic steps and resolution procedures."
+        }
+      ]
+    },
+    {
+      "name": "Examples",
+      "path": "examples/",
+      "purpose": "Code examples and sample implementations for common use cases",
+      "documents": [
+        {
+          "name": "Blog Example",
+          "path": "examples/blog-implementation.md",
+          "purpose": "Complete example of implementing a blog feature across the stack",
+          "prompt": "Create a comprehensive blog implementation example showing:\n\n1. **WordPress Setup**:\n   - Create 'Blog Post' custom post type\n   - ACF field group definition (title, content, author, date, featured image, categories, tags)\n   - Code snippets for registration\n2. **Firestore Structure**:\n   - Collection: 'blogPosts'\n   - Document schema with all fields\n   - Index configuration\n3. **React Components**:\n   - BlogList component (listing all posts)\n   - BlogPost component (single post view)\n   - BlogPostCard component\n   - Pagination implementation\n4. **Firebase Integration**:\n   - Querying blog posts\n   - Real-time updates\n   - Filtering and sorting\n5. **Complete Code Examples**: Full working code for each layer\n6. **Styling Suggestions**: Basic CSS/styling approach\n7. **Testing**: Example tests for the components\n\nFormat: Tutorial-style example with full code listings and explanations."
+        },
+        {
+          "name": "Authentication Example",
+          "path": "examples/authentication-example.md",
+          "purpose": "Implementation example for Firebase Authentication in React",
+          "prompt": "Create an authentication implementation example showing:\n\n1. **Firebase Auth Configuration**:\n   - Enable auth providers\n   - Security rules\n2. **Auth Context Implementation**:\n   - React context for auth state\n   - Custom hooks (useAuth, useRequireAuth)\n3. **Login Component**: Email/password and Google sign-in\n4. **Registration Component**: User signup form\n5. **Protected Routes**: Higher-order component or route wrapper\n6. **User Profile**: Accessing user data, updating profile\n7. **Logout Functionality**: Sign out implementation\n8. **Error Handling**: Common auth errors and messages\n9. **Complete Code Examples**: Full working code\n\nFormat: Tutorial with complete code examples and best practices."
+        },
+        {
+          "name": "Custom Post Type Example",
+          "path": "examples/custom-post-type-example.md",
+          "purpose": "Example of creating a custom post type with ACF and displaying it in React",
+          "prompt": "Create a custom post type example (e.g., 'Products' or 'Portfolio Items') showing:\n\n1. **WordPress Custom Post Type Registration**:\n   - Code for registering CPT\n   - Post type arguments and configuration\n2. **ACF Field Group**:\n   - Field group definition\n   - Field types (text, textarea, image, repeater, etc.)\n   - Export/import code\n3. **sync-fire-wp Configuration**:\n   - Enabling sync for this post type\n   - Field mapping\n4. **Firestore Collection Structure**:\n   - Resulting document schema\n   - Data types\n5. **React Implementation**:\n   - Fetching data from Firestore\n   - Displaying custom fields\n   - Image handling\n   - List and detail views\n6. **Complete Working Example**: End-to-end code\n\nFormat: Practical example with all code needed to implement the feature."
+        }
+      ]
+    },
+    {
+      "name": "Configuration",
+      "path": "config/",
+      "purpose": "Configuration templates and environment setup files",
+      "documents": [
+        {
+          "name": "Environment Variables Reference",
+          "path": "config/environment-variables.md",
+          "purpose": "Complete reference of all environment variables used across the project",
+          "prompt": "Create an environment variables reference that lists:\n\n1. **Frontend Environment Variables** (.env for React):\n   - VITE_FIREBASE_API_KEY\n   - VITE_FIREBASE_AUTH_DOMAIN\n   - VITE_FIREBASE_PROJECT_ID\n   - (all Firebase config variables)\n   - Description and where to find each value\n2. **Firebase Environment Variables** (Cloud Functions):\n   - Function configuration variables\n   - Third-party API keys\n3. **Docker/WordPress Environment Variables**:\n   - WP_INSTANCE_NAME\n   - ANTHROPIC_AUTH_TOKEN\n   - FIREBASE_TOKEN\n   - ENABLE_WEBTTY\n   - Port configurations\n4. **Environment Variable Templates**:\n   - .env.example files\n   - .env.local vs .env.production\n5. **Security Best Practices**:\n   - What NOT to commit\n   - Using .gitignore\n   - Managing secrets\n\nFormat: Reference documentation with clear descriptions and security guidelines."
+        },
+        {
+          "name": "Firebase Configuration Templates",
+          "path": "config/firebase-config-template.md",
+          "purpose": "Templates for Firebase configuration files (firestore.rules, functions/index.js starter)",
+          "prompt": "Create Firebase configuration templates including:\n\n1. **Firestore Security Rules Template**:\n   - Basic structure\n   - Authentication checks\n   - Read/write rules for common collections\n   - Helper functions\n   - Comments explaining each rule\n2. **Cloud Functions Starter Template**:\n   - Project structure\n   - Basic HTTP function\n   - Basic Firestore trigger\n   - Import/export patterns\n3. **Firebase.json Configuration**:\n   - Hosting configuration\n   - Functions configuration\n   - Emulators configuration\n4. **Storage Rules** (if using Firebase Storage)\n5. **Best Practices**: Comments and organization tips\n\nFormat: Code templates with extensive comments and explanation."
+        },
+        {
+          "name": "WordPress Configuration Guide",
+          "path": "config/wordpress-configuration.md",
+          "purpose": "WordPress-specific configuration including wp-config.php options and plugin settings",
+          "prompt": "Create a WordPress configuration guide covering:\n\n1. **wp-config.php Settings**:\n   - SQLite configuration constants\n   - Debug mode settings\n   - Security keys\n   - Memory limits\n   - Custom constants\n2. **Plugin Configuration**:\n   - sync-fire-wp settings\n   - Advanced Custom Fields (ACF) configuration\n   - Recommended plugin settings\n3. **Instance Management**:\n   - Creating persistent instances\n   - Port configuration\n   - Volume mounting\n4. **Performance Optimization**:\n   - Caching strategies\n   - Database optimization\n5. **Security Hardening**:\n   - Recommended security settings\n   - File permissions\n   - Admin access protection\n\nFormat: Configuration guide with code examples and explanations."
+        }
+      ]
+    }
+  ]
+}

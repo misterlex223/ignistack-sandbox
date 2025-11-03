@@ -1,0 +1,58 @@
+/**
+ * ACF Integration Styles
+ */
+
+.ignis-ai-field-wrapper {
+    margin-top: 10px;
+}
+
+.ignis-ai-generate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.ignis-ai-generate-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    animation: spin 2s linear infinite;
+}
+
+.ignis-ai-generate-btn:not(:disabled) .dashicons {
+    animation: none;
+}
+
+.ignis-ai-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 13px;
+}
+
+.ignis-ai-loading .spinner {
+    float: none;
+    margin: 0;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Integration with ACF fields */
+.acf-field .ignis-ai-field-wrapper {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.acf-field-wysiwyg .ignis-ai-field-wrapper {
+    margin-top: 15px;
+}

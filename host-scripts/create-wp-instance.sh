@@ -10,12 +10,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Default configuration
-WP_INSTANCES_DIR="$PROJECT_ROOT/wordpress-instances"
-IMAGE_NAME="ignistack-dev-sandbox"
+WP_INSTANCES_DIR_DEFAULT="$PROJECT_ROOT/wordpress-instances"
+IMAGE_NAME="ghcr.io/misterlex223/ignistack-sandbox"
 DEFAULT_WP_PORT=80
 DEFAULT_TTYD_PORT=9681
 DEFAULT_COSPEC_PORT=9280
 DEFAULT_FIREBASE_PORT_START=5000
+
+# Initialize WP_INSTANCES_DIR to default value
+WP_INSTANCES_DIR="$WP_INSTANCES_DIR_DEFAULT"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -44,6 +47,7 @@ show_usage() {
     echo "  --cospec-port <PORT>        CoSpec AI port (default: 9280)"
     echo "  --firebase-port <PORT>      Firebase emulator starting port (default: 5000)"
     echo "  --mount <PATH>              Mount additional host directory to /home/flexy/workspace"
+    echo "                                If specified, WordPress instances will be stored in this directory"
     echo "  --anthropic-token <TOKEN>   Anthropic API token"
     echo "  --firebase-token <TOKEN>    Firebase CLI token"
     echo ""
@@ -53,6 +57,9 @@ show_usage() {
     echo ""
     echo "  # Create a testing instance with custom ports"
     echo "  $0 create testing --port 8081 --ttyd-port 9682 --cospec-port 9281"
+    echo ""
+    echo "  # Create instance with custom storage location"
+    echo "  $0 create custom --mount /path/to/project --port 8082"
     echo ""
     echo "  # Start an existing instance"
     echo "  $0 start dev"
@@ -88,10 +95,47 @@ validate_instance_name() {
     fi
 }
 
-# Function to check if instance exists
+# Function to check if instance exists in current WP_INSTANCES_DIR
 instance_exists() {
     local name=$1
     [ -d "$WP_INSTANCES_DIR/$name" ]
+}
+
+# Function to find instance and its correct WP_INSTANCES_DIR
+find_instance_dir() {
+    local instance_name=$1
+    local original_instances_dir="$WP_INSTANCES_DIR"
+    local instance_dir="$WP_INSTANCES_DIR/$instance_name"
+    
+    # First check in the current WP_INSTANCES_DIR (which may have been set by command args)
+    if [ -d "$instance_dir" ]; then
+        echo "$instance_dir"
+        return 0
+    fi
+    
+    # Next try default directory
+    if [ "$WP_INSTANCES_DIR" != "$WP_INSTANCES_DIR_DEFAULT" ]; then
+        WP_INSTANCES_DIR="$WP_INSTANCES_DIR_DEFAULT"
+        instance_dir="$WP_INSTANCES_DIR/$instance_name"
+        
+        if [ -d "$instance_dir" ]; then
+            echo "$instance_dir"
+            return 0
+        fi
+    fi
+    
+    # Next try default instances directory with wordpress-instances subdirectory
+    WP_INSTANCES_DIR="$WP_INSTANCES_DIR_DEFAULT/wordpress-instances"
+    instance_dir="$WP_INSTANCES_DIR/$instance_name"
+    
+    if [ -d "$instance_dir" ]; then
+        echo "$instance_dir"
+        return 0
+    fi
+    
+    # Restore original directory and return failure
+    WP_INSTANCES_DIR="$original_instances_dir"
+    return 1
 }
 
 # Function to get container name
@@ -112,15 +156,8 @@ create_instance() {
     shift
 
     validate_instance_name "$instance_name"
-    ensure_instances_dir
 
-    if instance_exists "$instance_name"; then
-        print_message "$RED" "Error: WordPress instance '$instance_name' already exists"
-        print_message "$YELLOW" "Use '$0 start $instance_name' to start it or '$0 remove $instance_name' to delete it"
-        exit 1
-    fi
-
-    # Parse options
+    # Parse options first to determine if a mount path is specified
     local wp_port=$DEFAULT_WP_PORT
     local ttyd_port=$DEFAULT_TTYD_PORT
     local cospec_port=$DEFAULT_COSPEC_PORT
@@ -128,44 +165,69 @@ create_instance() {
     local mount_path=""
     local anthropic_token=""
     local firebase_token=""
+    local temp_args=()
 
+    # Store original arguments to process multiple times
+    local original_args=("$@")
+
+    # Parse options to check if mount path is provided
     while [[ $# -gt 0 ]]; do
         case $1 in
             --port)
                 wp_port=$2
+                temp_args+=("$1" "$2")
                 shift 2
                 ;;
             --ttyd-port)
                 ttyd_port=$2
+                temp_args+=("$1" "$2")
                 shift 2
                 ;;
             --cospec-port)
                 cospec_port=$2
+                temp_args+=("$1" "$2")
                 shift 2
                 ;;
             --firebase-port)
                 firebase_port=$2
+                temp_args+=("$1" "$2")
                 shift 2
                 ;;
             --mount)
                 mount_path=$2
+                temp_args+=("$1" "$2")
                 shift 2
                 ;;
             --anthropic-token)
                 anthropic_token=$2
+                temp_args+=("$1" "$2")
                 shift 2
                 ;;
             --firebase-token)
                 firebase_token=$2
+                temp_args+=("$1" "$2")
                 shift 2
                 ;;
             *)
-                print_message "$RED" "Unknown option: $1"
-                show_usage
-                exit 1
+                temp_args+=("$1")
+                shift
                 ;;
         esac
     done
+
+    # If mount path is provided, set WP_INSTANCES_DIR to mount_path/wordpress-instances
+    if [ -n "$mount_path" ] && [ -d "$mount_path" ]; then
+        WP_INSTANCES_DIR="$mount_path/wordpress-instances"
+        print_message "$BLUE" "Using mount path with wordpress-instances subdirectory: $WP_INSTANCES_DIR"
+    fi
+
+    ensure_instances_dir
+
+    if instance_exists "$instance_name"; then
+        print_message "$RED" "Error: WordPress instance '$instance_name' already exists"
+        print_message "$YELLOW" "Use '$0 start $instance_name' to start it or '$0 remove $instance_name' to delete it"
+        exit 1
+    fi
 
     print_message "$BLUE" "Creating WordPress instance: $instance_name"
 
@@ -186,12 +248,17 @@ EOF
     if [ -n "$mount_path" ]; then
         echo "MOUNT_PATH=$mount_path" >> "$instance_dir/.instance-info"
     fi
+    
+    # If WP_INSTANCES_DIR is different from default, record it in instance info
+    if [ "$WP_INSTANCES_DIR" != "$WP_INSTANCES_DIR_DEFAULT" ]; then
+        echo "WP_INSTANCES_DIR_VAR=$WP_INSTANCES_DIR" >> "$instance_dir/.instance-info"
+    fi
 
     print_message "$GREEN" "✓ WordPress instance directory created: $instance_dir"
     print_message "$BLUE" "Starting container..."
 
-    # Start the instance
-    start_instance "$instance_name" --port "$wp_port" --ttyd-port "$ttyd_port" --cospec-port "$cospec_port" --firebase-port "$firebase_port" ${mount_path:+--mount "$mount_path"} ${anthropic_token:+--anthropic-token "$anthropic_token"} ${firebase_token:+--firebase-token "$firebase_token"}
+    # Start the instance with original arguments
+    start_instance "$instance_name" "${original_args[@]}"
 }
 
 # Function to start a WordPress instance
@@ -201,10 +268,58 @@ start_instance() {
 
     validate_instance_name "$instance_name"
 
+    # Parse command-line options to check for mount path that might change instances dir
+    local wp_port=""
+    local ttyd_port=""
+    local cospec_port=""
+    local firebase_port=""
+    local mount_path=""
+    local anthropic_token=""
+    local firebase_token=""
+    local temp_args=("$@")
+    
+    # First pass: check if mount option is provided to potentially update WP_INSTANCES_DIR
+    local args_copy=("$@")
+    local has_mount_option=false
+    while [[ ${#args_copy[@]} -gt 0 ]]; do
+        case ${args_copy[0]} in
+            --mount)
+                mount_path=${args_copy[1]}
+                # If mount path is provided and is a valid directory, update WP_INSTANCES_DIR to include subdirectory
+                if [ -n "$mount_path" ] && [ -d "$mount_path" ]; then
+                    WP_INSTANCES_DIR="$mount_path/wordpress-instances"
+                    has_mount_option=true
+                    print_message "$BLUE" "Using mount path with wordpress-instances subdirectory: $WP_INSTANCES_DIR"
+                fi
+                ;;
+        esac
+        if [[ ${#args_copy[@]} -gt 1 ]]; then
+            args_copy=("${args_copy[@]:2}")
+        else
+            break
+        fi
+    done
+
+    # Check if instance exists with current WP_INSTANCES_DIR
     if ! instance_exists "$instance_name"; then
-        print_message "$RED" "Error: WordPress instance '$instance_name' does not exist"
-        print_message "$YELLOW" "Use '$0 create $instance_name' to create it first"
-        exit 1
+        # If not found and we didn't receive a mount option in this call, try default instances directory
+        if [ "$has_mount_option" = false ]; then
+            local original_instances_dir="$WP_INSTANCES_DIR"
+            WP_INSTANCES_DIR="$WP_INSTANCES_DIR_DEFAULT"
+            
+            if ! instance_exists "$instance_name"; then
+                # If still not found, restore original and error out
+                WP_INSTANCES_DIR="$original_instances_dir"
+                print_message "$RED" "Error: WordPress instance '$instance_name' does not exist in $WP_INSTANCES_DIR"
+                print_message "$YELLOW" "Use '$0 create $instance_name' to create it first"
+                exit 1
+            fi
+        else
+            # If mount option was provided but instance not found in the derived path, error out
+            print_message "$RED" "Error: WordPress instance '$instance_name' does not exist in $WP_INSTANCES_DIR"
+            print_message "$YELLOW" "Use '$0 create $instance_name' to create it first"
+            exit 1
+        fi
     fi
 
     local container_name=$(get_container_name "$instance_name")
@@ -218,7 +333,19 @@ start_instance() {
 
     # Load instance metadata
     local instance_dir="$WP_INSTANCES_DIR/$instance_name"
-    source "$instance_dir/.instance-info"
+    if [ -f "$instance_dir/.instance-info" ]; then
+        # Source the instance info to get stored values
+        source "$instance_dir/.instance-info"
+        
+        # If the instance info file contains WP_INSTANCES_DIR, use that as the base directory
+        if [ -n "$WP_INSTANCES_DIR_VAR" ]; then
+            WP_INSTANCES_DIR="$WP_INSTANCES_DIR_VAR"
+            instance_dir="$WP_INSTANCES_DIR/$instance_name"
+        fi
+    else
+        print_message "$RED" "Error: Instance metadata file missing: $instance_dir/.instance-info"
+        exit 1
+    fi
 
     # Parse command-line options (override metadata if provided)
     while [[ $# -gt 0 ]]; do
@@ -271,11 +398,11 @@ start_instance() {
     local docker_cmd="docker run -d --name $container_name"
 
     # Add port mappings
-    docker_cmd="$docker_cmd -p ${WP_PORT}:80"
-    docker_cmd="$docker_cmd -p ${TTYD_PORT}:9681"
-    docker_cmd="$docker_cmd -p ${COSPEC_PORT}:9280"
-    docker_cmd="$docker_cmd -p ${FIREBASE_PORT}:5000"
-    docker_cmd="$docker_cmd -p $((FIREBASE_PORT + 1)):5001"
+    docker_cmd="$docker_cmd -p ${WP_PORT:-$DEFAULT_WP_PORT}:80"
+    docker_cmd="$docker_cmd -p ${TTYD_PORT:-$DEFAULT_TTYD_PORT}:9681"
+    docker_cmd="$docker_cmd -p ${COSPEC_PORT:-$DEFAULT_COSPEC_PORT}:9280"
+    docker_cmd="$docker_cmd -p ${FIREBASE_PORT:-$DEFAULT_FIREBASE_PORT_START}:5000"
+    docker_cmd="$docker_cmd -p $(( ${FIREBASE_PORT:-$DEFAULT_FIREBASE_PORT_START} + 1 )):5001"
 
     # Mount WordPress persistent volume
     docker_cmd="$docker_cmd -v $instance_dir:/home/flexy/wordpress-persistent"
@@ -288,8 +415,12 @@ start_instance() {
 
     # Set environment variables
     docker_cmd="$docker_cmd -e WP_INSTANCE_NAME=$instance_name"
-    docker_cmd="$docker_cmd -e WORDPRESS_SITE_URL=http://localhost:${WP_PORT}"
+    docker_cmd="$docker_cmd -e WORDPRESS_SITE_URL=http://localhost:${WP_PORT:-$DEFAULT_WP_PORT}"
     docker_cmd="$docker_cmd -e ENABLE_WEBTTY=true"
+
+    if [ -n "$OPENAI_API_KEY" ]; then
+        docker_cmd="$docker_cmd -e OPENAI_API_KEY=$OPENAI_API_KEY"    
+    fi
 
     if [ -n "$ANTHROPIC_TOKEN" ]; then
         docker_cmd="$docker_cmd -e ANTHROPIC_AUTH_TOKEN=$ANTHROPIC_TOKEN"
@@ -313,10 +444,10 @@ start_instance() {
         print_message "$GREEN" "✓ WordPress instance '$instance_name' started successfully!"
         print_message "$GREEN" ""
         print_message "$GREEN" "Access points:"
-        print_message "$GREEN" "  WordPress:    http://localhost:${WP_PORT}"
-        print_message "$GREEN" "  WebTTY:       http://localhost:${TTYD_PORT}"
-        print_message "$GREEN" "  CoSpec AI:    http://localhost:${COSPEC_PORT}"
-        print_message "$GREEN" "  Firebase UI:  http://localhost:${FIREBASE_PORT}"
+        print_message "$GREEN" "  WordPress:    http://localhost:${WP_PORT:-$DEFAULT_WP_PORT}"
+        print_message "$GREEN" "  WebTTY:       http://localhost:${TTYD_PORT:-$DEFAULT_TTYD_PORT}"
+        print_message "$GREEN" "  CoSpec AI:    http://localhost:${COSPEC_PORT:-$DEFAULT_COSPEC_PORT}"
+        print_message "$GREEN" "  Firebase UI:  http://localhost:${FIREBASE_PORT:-$DEFAULT_FIREBASE_PORT_START}"
         print_message "$GREEN" ""
         print_message "$BLUE" "Instance data: $instance_dir"
         print_message "$BLUE" "Container: $container_name"
@@ -334,7 +465,12 @@ stop_instance() {
 
     validate_instance_name "$instance_name"
 
-    if ! instance_exists "$instance_name"; then
+    # Find the instance directory
+    local original_instances_dir="$WP_INSTANCES_DIR"
+    local instance_dir
+    instance_dir=$(find_instance_dir "$instance_name")
+    if [ $? -ne 0 ]; then
+        WP_INSTANCES_DIR="$original_instances_dir"
         print_message "$RED" "Error: WordPress instance '$instance_name' does not exist"
         exit 1
     fi
@@ -358,7 +494,12 @@ remove_instance() {
 
     validate_instance_name "$instance_name"
 
-    if ! instance_exists "$instance_name"; then
+    # Find the instance directory
+    local original_instances_dir="$WP_INSTANCES_DIR"
+    local instance_dir
+    instance_dir=$(find_instance_dir "$instance_name")
+    if [ $? -ne 0 ]; then
+        WP_INSTANCES_DIR="$original_instances_dir"
         print_message "$RED" "Error: WordPress instance '$instance_name' does not exist"
         exit 1
     fi
@@ -372,7 +513,6 @@ remove_instance() {
         docker rm "$container_name" 2>/dev/null || true
     fi
 
-    local instance_dir="$WP_INSTANCES_DIR/$instance_name"
 
     print_message "$RED" "WARNING: This will permanently delete all data for instance '$instance_name'"
     print_message "$YELLOW" "Location: $instance_dir"
@@ -390,36 +530,99 @@ remove_instance() {
 
 # Function to list all WordPress instances
 list_instances() {
-    ensure_instances_dir
-
     print_message "$BLUE" "WordPress Instances:"
     print_message "$BLUE" "===================="
 
-    if [ ! "$(ls -A $WP_INSTANCES_DIR 2>/dev/null)" ]; then
-        print_message "$YELLOW" "No WordPress instances found"
-        print_message "$BLUE" "Create one with: $0 create <name>"
-        return 0
+    local total_instances=0
+    
+    # List instances from current WP_INSTANCES_DIR
+    if [ -d "$WP_INSTANCES_DIR" ] && [ "$(ls -A $WP_INSTANCES_DIR 2>/dev/null)" ]; then
+        print_message "$BLUE" "Instances in current directory ($WP_INSTANCES_DIR):"
+        printf "%-20s %-15s %-30s %-10s\n" "NAME" "STATUS" "CONTAINER" "SIZE"
+        printf "%-20s %-15s %-30s %-10s\n" "----" "------" "---------" "----"
+
+        for instance_dir in "$WP_INSTANCES_DIR"/*; do
+            if [ -d "$instance_dir" ]; then
+                local instance_name=$(basename "$instance_dir")
+                local container_name=$(get_container_name "$instance_name")
+                local status="stopped"
+                local size=$(du -sh "$instance_dir" 2>/dev/null | cut -f1)
+
+                if container_is_running "$container_name"; then
+                    status="${GREEN}running${NC}"
+                else
+                    status="${YELLOW}stopped${NC}"
+                fi
+
+                printf "%-20s %-24s %-30s %-10s\n" "$instance_name" "$(echo -e $status)" "$container_name" "$size"
+                ((total_instances++))
+            fi
+        done
     fi
 
-    printf "%-20s %-15s %-30s %-10s\n" "NAME" "STATUS" "CONTAINER" "SIZE"
-    printf "%-20s %-15s %-30s %-10s\n" "----" "------" "---------" "----"
+    # List instances from default directory if it's different from current
+    if [ "$WP_INSTANCES_DIR" != "$WP_INSTANCES_DIR_DEFAULT" ] && [ -d "$WP_INSTANCES_DIR_DEFAULT" ]; then
+        local default_instances=$(find "$WP_INSTANCES_DIR_DEFAULT" -mindepth 1 -maxdepth 1 -type d)
+        if [ -n "$default_instances" ]; then
+            print_message "$BLUE" "\nInstances in default directory ($WP_INSTANCES_DIR_DEFAULT):"
+            printf "%-20s %-15s %-30s %-10s\n" "NAME" "STATUS" "CONTAINER" "SIZE"
+            printf "%-20s %-15s %-30s %-10s\n" "----" "------" "---------" "----"
+            
+            for instance_dir in "$WP_INSTANCES_DIR_DEFAULT"/*; do
+                if [ -d "$instance_dir" ]; then
+                    local instance_name=$(basename "$instance_dir")
+                    local container_name=$(get_container_name "$instance_name")
+                    local status="stopped"
+                    local size=$(du -sh "$instance_dir" 2>/dev/null | cut -f1)
 
-    for instance_dir in "$WP_INSTANCES_DIR"/*; do
-        if [ -d "$instance_dir" ]; then
-            local instance_name=$(basename "$instance_dir")
-            local container_name=$(get_container_name "$instance_name")
-            local status="stopped"
-            local size=$(du -sh "$instance_dir" 2>/dev/null | cut -f1)
+                    if container_is_running "$container_name"; then
+                        status="${GREEN}running${NC}"
+                    else
+                        status="${YELLOW}stopped${NC}"
+                    fi
 
-            if container_is_running "$container_name"; then
-                status="${GREEN}running${NC}"
-            else
-                status="${YELLOW}stopped${NC}"
-            fi
-
-            printf "%-20s %-24s %-30s %-10s\n" "$instance_name" "$(echo -e $status)" "$container_name" "$size"
+                    printf "%-20s %-24s %-30s %-10s\n" "$instance_name" "$(echo -e $status)" "$container_name" "$size"
+                    ((total_instances++))
+                fi
+            done
         fi
-    done
+    fi
+
+    # List instances from default wordpress-instances subdirectory if it's different
+    local wp_instances_subdir="$WP_INSTANCES_DIR_DEFAULT/wordpress-instances"
+    if [ "$WP_INSTANCES_DIR" != "$wp_instances_subdir" ] && [ -d "$wp_instances_subdir" ]; then
+        local wp_instances=$(find "$wp_instances_subdir" -mindepth 1 -maxdepth 1 -type d)
+        if [ -n "$wp_instances" ]; then
+            print_message "$BLUE" "\nInstances in default wordpress-instances subdirectory ($wp_instances_subdir):"
+            printf "%-20s %-15s %-30s %-10s\n" "NAME" "STATUS" "CONTAINER" "SIZE"
+            printf "%-20s %-15s %-30s %-10s\n" "----" "------" "---------" "----"
+            
+            for instance_dir in "$wp_instances_subdir"/*; do
+                if [ -d "$instance_dir" ]; then
+                    local instance_name=$(basename "$instance_dir")
+                    local container_name=$(get_container_name "$instance_name")
+                    local status="stopped"
+                    local size=$(du -sh "$instance_dir" 2>/dev/null | cut -f1)
+
+                    if container_is_running "$container_name"; then
+                        status="${GREEN}running${NC}"
+                    else
+                        status="${YELLOW}stopped${NC}"
+                    fi
+
+                    printf "%-20s %-24s %-30s %-10s\n" "$instance_name" "$(echo -e $status)" "$container_name" "$size"
+                    ((total_instances++))
+                fi
+            done
+        fi
+    fi
+
+    if [ $total_instances -eq 0 ]; then
+        print_message "$YELLOW" "No WordPress instances found"
+        print_message "$BLUE" "Create one with: $0 create <name>"
+    else
+        print_message "$GREEN" "\nTotal instances found: $total_instances"
+    fi
 }
 
 # Function to show instance information
@@ -428,12 +631,16 @@ show_instance_info() {
 
     validate_instance_name "$instance_name"
 
-    if ! instance_exists "$instance_name"; then
+    # Find the instance directory
+    local original_instances_dir="$WP_INSTANCES_DIR"
+    local instance_dir
+    instance_dir=$(find_instance_dir "$instance_name")
+    if [ $? -ne 0 ]; then
+        WP_INSTANCES_DIR="$original_instances_dir"
         print_message "$RED" "Error: WordPress instance '$instance_name' does not exist"
         exit 1
     fi
 
-    local instance_dir="$WP_INSTANCES_DIR/$instance_name"
     local container_name=$(get_container_name "$instance_name")
 
     print_message "$BLUE" "WordPress Instance Information"
@@ -485,6 +692,30 @@ main() {
     local command=$1
     shift
 
+    # Check if a mount path is provided as a global option to set WP_INSTANCES_DIR
+    # This is done by parsing the arguments to look for --mount
+    local original_args=("$@")
+    local args_copy=("$@")
+    local has_mount_option=false
+    while [[ ${#args_copy[@]} -gt 0 ]]; do
+        case ${args_copy[0]} in
+            --mount)
+                local mount_path=${args_copy[1]}
+                # If mount path is provided and is a valid directory, update WP_INSTANCES_DIR to include subdirectory
+                if [ -n "$mount_path" ] && [ -d "$mount_path" ]; then
+                    WP_INSTANCES_DIR="$mount_path/wordpress-instances"
+                    has_mount_option=true
+                    print_message "$BLUE" "Using mount path with wordpress-instances subdirectory: $WP_INSTANCES_DIR"
+                fi
+                ;;
+        esac
+        if [[ ${#args_copy[@]} -gt 1 ]]; then
+            args_copy=("${args_copy[@]:2}")
+        else
+            break
+        fi
+    done
+
     case $command in
         create)
             if [ $# -eq 0 ]; then
@@ -492,7 +723,7 @@ main() {
                 show_usage
                 exit 1
             fi
-            create_instance "$@"
+            create_instance "${original_args[@]}"
             ;;
         start)
             if [ $# -eq 0 ]; then
@@ -500,7 +731,7 @@ main() {
                 show_usage
                 exit 1
             fi
-            start_instance "$@"
+            start_instance "${original_args[@]}"
             ;;
         stop)
             if [ $# -eq 0 ]; then

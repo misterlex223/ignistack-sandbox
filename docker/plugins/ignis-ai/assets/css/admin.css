@@ -1,0 +1,102 @@
+/**
+ * Admin Styles for IgnisAI
+ */
+
+/* Form Generator */
+.ignis-ai-form-generator {
+    max-width: 1200px;
+}
+
+.ignis-ai-generator-container {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-top: 20px;
+}
+
+.ignis-ai-input-section,
+.ignis-ai-preview-section {
+    padding: 20px 30px;
+}
+
+.ignis-ai-input-section h2,
+.ignis-ai-preview-section h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.ignis-ai-loading {
+    padding: 60px 30px;
+    text-align: center;
+}
+
+.ignis-ai-loading .spinner {
+    float: none;
+    margin: 0 auto 20px;
+}
+
+.ignis-ai-loading p {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Field Group Preview */
+.ignis-ai-field-group-preview {
+    margin: 20px 0;
+}
+
+.ignis-ai-field-group-preview h3 {
+    margin: 0 0 15px;
+    font-size: 18px;
+}
+
+.ignis-ai-field-group-preview table {
+    margin-top: 15px;
+}
+
+.ignis-ai-field-group-preview .description {
+    color: #666;
+    font-style: italic;
+}
+
+.ignis-ai-field-group-preview .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #2271b1;
+    color: #fff;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Required field indicator */
+.required {
+    color: #d63638;
+}
+
+/* Button styles */
+.button-hero {
+    font-size: 14px !important;
+    height: auto !important;
+    padding: 10px 20px !important;
+}
+
+.button .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+/* Notices within preview */
+.ignis-ai-preview-section .notice {
+    margin: 0 0 20px;
+}
+
+/* Settings page */
+.ignis-ai-seo-wrapper .button {
+    margin-bottom: 10px;
+}

@@ -89,6 +89,12 @@ RUN git clone https://github.com/misterlex223/ignis-schema-wp.git /tmp/ignis-sch
 # Clone the custom sync-fire-wp plugin
 RUN git clone https://github.com/misterlex223/sync-fire-wp.git /home/flexy/wordpress/wp-content/plugins/sync-fire-wp
 
+# Install IgnisAI plugin
+COPY docker/plugins/ignis-ai /home/flexy/wordpress/wp-content/plugins/ignis-ai
+RUN sudo chown -R flexy:flexy /home/flexy/wordpress/wp-content/plugins/ignis-ai && \
+    cd /home/flexy/wordpress/wp-content/plugins/ignis-ai && \
+    composer install --no-dev --optimize-autoloader
+
 # Setup project directory
 WORKDIR /home/flexy/workspace
 
