@@ -36,7 +36,7 @@ if [ $? -eq 0 ]; then
     echo "📋 技術棧:"
     echo "  - React + Vite 前端開發"
     echo "  - Firebase 後端服務"
-    echo "  - WordPress CMS (PHP 8.1)"
+    echo "  - WordPress CMS (PHP 8.4)"
     echo "  - sync-fire-wp 同步插件"
     echo "  - Claude Code AI 開發助手"
     echo "  - CoSpec AI Markdown 編輯器"

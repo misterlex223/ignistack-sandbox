@@ -680,12 +680,12 @@ FROM ubuntu:22.04
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
-    php8.1 \
-    php8.1-sqlite3 \
-    php8.1-curl \
-    php8.1-xml \
-    php8.1-mbstring \
-    php8.1-zip \
+    php8.4 \
+    php8.4-sqlite3 \
+    php8.4-curl \
+    php8.4-xml \
+    php8.4-mbstring \
+    php8.4-zip \
     sqlite3 \
     wget \
     && rm -rf /var/lib/apt/lists/*

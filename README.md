@@ -72,7 +72,7 @@ IgniStack is a modern, AI-powered development stack that combines:
 - Claude Code CLI
 - Firebase CLI (firebase-tools)
 - WP-CLI (WordPress command-line interface)
-- PHP 8.1 with SQLite3 extension
+- PHP 8.4 with SQLite3 extension
 
 ## Quick Start
 

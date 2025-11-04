@@ -6,6 +6,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 IgniStack Sandbox is a Docker-based development environment for the IgniStack: React + Vite frontend, Firebase backend, and WordPress CMS with SQLite database. Key innovation: **WordPress uses SQLite instead of MySQL**, enabling portable, persistent WordPress instances without a database server.
 
+### WordPress Plugin Ecosystem
+
+The sandbox includes a powerful plugin stack for modern development:
+
+1. **ignis-schema-wp** (https://github.com/misterlex223/ignis-schema-wp)
+   - Schema-based custom post type definition using YAML/JSON
+   - TypeScript type generation for React frontend
+   - WP-CLI commands: `wp schema list|validate|register|export`
+   - Built on top of ACF (required dependency)
+   - Location: Should be installed at `wp-content/plugins/ignis-schema-wp/`
+
+2. **ignis-ai** (`docker/plugins/ignis-ai/`)
+   - AI-powered content generation using Claude
+   - Automatic image alt text via vision API
+   - ACF field group generator from natural language
+   - SEO analysis and optimization
+   - WP-CLI commands: `wp ignis-ai generate-alt-text|generate-content|generate-form`
+   - Requires: `OPENAI_API_KEY` environment variable
+
+3. **sync-fire-wp**
+   - Real-time WordPress to Firestore synchronization
+   - Syncs custom post types and ACF fields
+   - Configured via WordPress admin
+
+4. **ACF (Advanced Custom Fields)**
+   - Core dependency for ignis-schema-wp
+   - Provides field rendering engine
+   - Pre-installed and activated
+
+5. **SQLite Database Integration**
+   - Enables WordPress to use SQLite instead of MySQL
+   - Database location: `wp-content/database/.ht.sqlite`
+
 ## Core Architecture
 
 ### Multi-Instance WordPress System
@@ -84,6 +117,48 @@ define( 'DB_DIR', __DIR__ . '/wp-content/database' );  // NOT hardcoded paths
 docker logs <container-name>                            # View logs
 docker exec -it <container-name> bash                   # Shell access
 docker exec <container> wp core version                 # WP-CLI commands
+```
+
+### Schema System Operations
+
+```bash
+# List all schemas
+docker exec <container> wp schema list --allow-root
+
+# Validate schema syntax
+docker exec <container> wp schema validate <post-type> --allow-root
+
+# Register schema in WordPress
+docker exec <container> wp schema register --post_type=<type> --allow-root
+
+# Export TypeScript types
+docker exec <container> wp schema export <post-type> \
+  --output=/home/flexy/workspace/frontend/src/types \
+  --allow-root
+
+# Export all schemas
+docker exec <container> wp schema export-all \
+  --output=/home/flexy/workspace/frontend/src/types \
+  --allow-root
+```
+
+### AI Operations
+
+```bash
+# Generate alt text for all images
+docker exec <container> wp ignis-ai generate-alt-text --allow-root
+
+# Generate content for specific field
+docker exec <container> wp ignis-ai generate-content <post-id> <field-name> \
+  --prompt="Generate compelling description" \
+  --allow-root
+
+# Generate ACF field group from description
+docker exec <container> wp ignis-ai generate-form \
+  "Product fields: name, price, SKU, description" \
+  --post-type=product \
+  --title="Product Information" \
+  --allow-root
 ```
 
 ## Key Files and Their Roles
@@ -221,14 +296,18 @@ MOUNT_PATH=/path/to/code  # Optional
 
 ## Documentation Structure
 
-- **README.md**: Quick start, feature overview, basic commands
+- **README.md**: Complete IgniStack overview, quick start, feature showcase, single source of truth (662 lines)
 - **docs/WORDPRESS-INSTANCES.md**: Comprehensive instance management guide (770 lines)
 - **docs/SQLITE-INTEGRATION.md**: Technical SQLite integration details, critical issues (442 lines)
+- **docs/SCHEMA-SYSTEM-INTEGRATION.md**: ignis-schema-wp integration and usage guide (613 lines)
+- **docs/AI-INTEGRATION.md**: ignis-ai plugin features and workflow (434 lines)
 
 Refer users to appropriate doc based on their question:
+- Overview & getting started → README.md
 - Instance management → WORDPRESS-INSTANCES.md
 - SQLite errors/config → SQLITE-INTEGRATION.md
-- Quick start → README.md
+- Schema system setup → SCHEMA-SYSTEM-INTEGRATION.md
+- AI features → AI-INTEGRATION.md
 
 ## Environment Variables Reference
 

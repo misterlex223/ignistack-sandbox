@@ -13,23 +13,29 @@ RUN sudo ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
 # Install PHP and WordPress specific dependencies with SQLite support
 RUN sudo apt-get update && sudo apt-get install -y \
     tzdata \
-    php8.1 \
-    php8.1-sqlite3 \
-    php8.1-curl \
-    php8.1-xml \
-    php8.1-mbstring \
-    php8.1-zip \
-    php8.1-dev \
     sqlite3 \
     unzip \
     libyaml-dev \
     && sudo rm -rf /var/lib/apt/lists/*
 
-# Install YAML PHP extension
-# Install libyaml-dev first for yaml extension compilation
-RUN sudo apt-get update && sudo apt-get install -y libyaml-dev && \
-    sudo pecl install yaml && \
-    echo "extension=yaml.so" | sudo tee /etc/php/8.1/cli/conf.d/yaml.ini && \
+# Install YAML, gRPC, and Protobuf PHP extensions
+# Strategy: Use pre-built packages from ondrej/php PPA which includes php-grpc
+RUN sudo apt-get update && \
+    # Add ondrej/php PPA which has pre-compiled php-grpc packages
+    sudo add-apt-repository -y ppa:ondrej/php && \
+    sudo apt-get update && \
+    # Install pre-compiled extensions (MUCH faster than PECL compilation)
+    sudo apt-get install -y php-yaml php-protobuf \
+        php8.4 \
+        php8.4-grpc \
+        php8.4-sqlite3 \
+        php8.4-curl \
+        php8.4-xml \
+        php8.4-mbstring \
+        php8.4-zip \
+        php8.4-dev && \
+    sudo apt-get remove -y zlib1g-dev build-essential && \
+    sudo apt-get autoremove -y && \
     sudo rm -rf /var/lib/apt/lists/*
 
 # Install WordPress CLI
@@ -86,8 +92,17 @@ RUN git clone https://github.com/misterlex223/ignis-schema-wp.git /tmp/ignis-sch
     # Clean up temp directory
     rm -rf /tmp/ignis-schema-wp
 
-# Clone the custom sync-fire-wp plugin
-RUN git clone https://github.com/misterlex223/sync-fire-wp.git /home/flexy/wordpress/wp-content/plugins/sync-fire-wp
+# Clone the custom sync-fire-wp plugin and install dependencies
+RUN git clone https://github.com/misterlex223/sync-fire-wp.git /tmp/sync-fire-wp && \
+    # Create plugin directory
+    mkdir -p /home/flexy/wordpress/wp-content/plugins/sync-fire-wp && \
+    # Move the actual plugin files from the subdirectory to the correct location
+    cp -r /tmp/sync-fire-wp/sync-fire-wp/* /home/flexy/wordpress/wp-content/plugins/sync-fire-wp && \
+    # Install Composer dependencies
+    cd /home/flexy/wordpress/wp-content/plugins/sync-fire-wp && \
+    composer install --no-dev --optimize-autoloader && \
+    # Clean up temp directory
+    rm -rf /tmp/sync-fire-wp
 
 # Install IgnisAI plugin
 COPY docker/plugins/ignis-ai /home/flexy/wordpress/wp-content/plugins/ignis-ai
