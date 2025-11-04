@@ -236,7 +236,28 @@ wp schema validate <post-type>          # Validate schema syntax
 wp schema register --post_type=<type>   # Register schema in WordPress
 wp schema export <post-type>            # Export TypeScript types
 wp schema export-all --output=./types   # Export all types
+wp schema import <file-path>            # Import a schema file from any location
 ```
+
+**Import Command**:
+The import command allows you to import schema files from any location directly into the appropriate schema directories:
+
+```bash
+# Import a YAML file from any location (no need to remember the exact schema path)
+wp schema import /path/to/product.yaml
+
+# Import as a specific type
+wp schema import ~/Downloads/event.yaml --type=post-type
+wp schema import ./category.yaml --type=taxonomy
+
+# Import with custom slug
+wp schema import ./my-schema.yaml --slug=custom-name
+
+# Overwrite existing schema
+wp schema import product.yaml --overwrite
+```
+
+The import command will validate the schema file, copy it to the correct directory (either `wp-content/schemas/post-types` or `wp-content/schemas/taxonomies`), and provide next steps for registration.
 
 **Learn More**: See [docs/SCHEMA-SYSTEM-INTEGRATION.md](docs/SCHEMA-SYSTEM-INTEGRATION.md)
 

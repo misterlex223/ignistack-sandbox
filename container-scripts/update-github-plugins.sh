@@ -45,7 +45,7 @@ get_installed_version() {
     local plugin_dir="$PLUGINS_DIR/$plugin_name"
 
     if [ -d "$plugin_dir/.git" ]; then
-        cd "$plugin_dir"
+        cd "$plugin_dir" 2>/dev/null || return 1
         git rev-parse HEAD 2>/dev/null || echo "unknown"
     else
         echo "not-git"
@@ -69,15 +69,32 @@ update_plugin() {
     # Clone fresh copy
     rm -rf "$temp_dir"
     log_info "Cloning from https://github.com/$repo (branch/tag: $target_version)..."
-
-    if ! git clone --depth 1 --branch "$target_version" "https://github.com/$repo.git" "$temp_dir" 2>/dev/null; then
+    
+    # Change to a safe directory before cloning to avoid "Unable to read current working directory" error
+    cd /tmp
+    
+    if ! git clone --depth 1 --branch "$target_version" "https://github.com/$repo.git" "$temp_dir" 2>&1; then
         log_error "Failed to clone repository. Branch/tag '$target_version' may not exist."
         return 1
     fi
 
-    # Get new version
+    # Verify that the temp directory was created and navigate to it
+    if [ ! -d "$temp_dir" ]; then
+        log_error "Temporary directory was not created properly: $temp_dir"
+        return 1
+    fi
+    
     cd "$temp_dir"
+    if [ $? -ne 0 ]; then
+        log_error "Could not change to temporary directory: $temp_dir"
+        return 1
+    fi
+    
     local new_version=$(git rev-parse HEAD)
+    if [ $? -ne 0 ]; then
+        log_error "Could not get git revision"
+        return 1
+    fi
     log_info "Latest version: $new_version"
 
     # Check if update needed
@@ -121,7 +138,7 @@ update_plugin() {
     # Install composer dependencies if composer.json exists
     if [ -f "$plugin_dir/composer.json" ]; then
         log_info "Installing Composer dependencies..."
-        cd "$plugin_dir"
+        cd "$plugin_dir" 2>/dev/null || log_warn "Could not change directory for composer install: $plugin_dir"
         if command -v composer &> /dev/null; then
             composer install --no-dev --optimize-autoloader --quiet || log_warn "Composer install failed"
         else
