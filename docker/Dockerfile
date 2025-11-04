@@ -4,7 +4,10 @@ FROM ghcr.io/misterlex223/flexy-sandbox:latest
 
 # Set environment variables to avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Etc/UTC
+
+# Default timezone (can be overridden at runtime via -e TZ=...)
+ARG TZ=Etc/UTC
+ENV TZ=${TZ}
 
 # Configure timezone data to avoid interactive prompts
 RUN sudo ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
@@ -59,7 +62,9 @@ RUN wget https://wordpress.org/latest.tar.gz && \
 RUN mkdir -p /home/flexy/wordpress/wp-content/schemas/post-types
 
 # Install the WordPress SQLite Database Integration plugin properly
-RUN git clone https://github.com/WordPress/sqlite-database-integration.git /tmp/sqlite-plugin && \
+# ARG allows version pinning at build time (e.g., --build-arg SQLITE_VERSION=2.1.0)
+ARG SQLITE_VERSION=main
+RUN git clone --depth 1 --branch ${SQLITE_VERSION} https://github.com/WordPress/sqlite-database-integration.git /tmp/sqlite-plugin && \
     # Create plugin directory
     mkdir -p /home/flexy/wordpress/wp-content/plugins/sqlite-database-integration && \
     # Copy plugin files to the plugins directory
@@ -84,16 +89,20 @@ RUN mkdir -p /home/flexy/wordpress/wp-content/plugins && \
     rm advanced-custom-fields.zip
 
 # Clone the ignis-schema-wp plugin
-RUN git clone https://github.com/misterlex223/ignis-schema-wp.git /tmp/ignis-schema-wp && \
+# ARG allows version pinning at build time (e.g., --build-arg IGNIS_SCHEMA_VERSION=v1.0.0)
+ARG IGNIS_SCHEMA_VERSION=main
+RUN git clone --depth 1 --branch ${IGNIS_SCHEMA_VERSION} https://github.com/misterlex223/ignis-schema-wp.git /tmp/ignis-schema-wp && \
     # Create plugin directory
-    sudo mkdir -p /home/flexy/wordpress/wp-content/plugins/ignis-schema-wp && \
+    mkdir -p /home/flexy/wordpress/wp-content/plugins/ignis-schema-wp && \
     # Move the actual plugin files from the subdirectory to the correct location
-    sudo cp -r /tmp/ignis-schema-wp/ignis-schema-wp/* /home/flexy/wordpress/wp-content/plugins/ignis-schema-wp && \
+    cp -r /tmp/ignis-schema-wp/ignis-schema-wp/* /home/flexy/wordpress/wp-content/plugins/ignis-schema-wp && \
     # Clean up temp directory
     rm -rf /tmp/ignis-schema-wp
 
 # Clone the custom sync-fire-wp plugin and install dependencies
-RUN git clone https://github.com/misterlex223/sync-fire-wp.git /tmp/sync-fire-wp && \
+# ARG allows version pinning at build time (e.g., --build-arg SYNC_FIRE_VERSION=v1.0.0)
+ARG SYNC_FIRE_VERSION=main
+RUN git clone --depth 1 --branch ${SYNC_FIRE_VERSION} https://github.com/misterlex223/sync-fire-wp.git /tmp/sync-fire-wp && \
     # Create plugin directory
     mkdir -p /home/flexy/wordpress/wp-content/plugins/sync-fire-wp && \
     # Move the actual plugin files from the subdirectory to the correct location
@@ -119,6 +128,11 @@ RUN mkdir -p /home/flexy/docs
 # Setup basic git config
 # RUN git config --global user.name "Flexy" && \
 #     git config --global user.email "flexy@example.com"
+
+# Copy plugin update script
+COPY container-scripts/update-github-plugins.sh /tmp/update-github-plugins.sh
+RUN sudo mv /tmp/update-github-plugins.sh /usr/local/bin/update-github-plugins.sh && \
+    sudo chmod +x /usr/local/bin/update-github-plugins.sh
 
 # Copy and set up IgniStack specific init script
 COPY docker/init.sh /tmp/init-ignistack.sh

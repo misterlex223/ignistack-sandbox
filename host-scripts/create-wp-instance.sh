@@ -5,6 +5,25 @@
 
 set -e  # Exit on any error
 
+# Function to detect host timezone
+detect_timezone() {
+    # Try multiple methods to detect timezone
+    if [ -n "$TZ" ]; then
+        echo "$TZ"
+    elif [ -f /etc/timezone ]; then
+        cat /etc/timezone
+    elif [ -L /etc/localtime ]; then
+        # Extract timezone from symlink
+        readlink /etc/localtime | sed 's|.*/zoneinfo/||'
+    else
+        # Fallback to UTC
+        echo "Etc/UTC"
+    fi
+}
+
+# Detect and set host timezone
+HOST_TIMEZONE=$(detect_timezone)
+
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -386,6 +405,7 @@ start_instance() {
 
     print_message "$BLUE" "Starting WordPress instance: $instance_name"
     print_message "$BLUE" "Container name: $container_name"
+    print_message "$BLUE" "Timezone: $HOST_TIMEZONE"
 
     # Check if image exists
     if ! docker images --format "{{.Repository}}" | grep -q "^${IMAGE_NAME}$"; then
@@ -417,9 +437,10 @@ start_instance() {
     docker_cmd="$docker_cmd -e WP_INSTANCE_NAME=$instance_name"
     docker_cmd="$docker_cmd -e WORDPRESS_SITE_URL=http://localhost:${WP_PORT:-$DEFAULT_WP_PORT}"
     docker_cmd="$docker_cmd -e ENABLE_WEBTTY=true"
+    docker_cmd="$docker_cmd -e TZ=$HOST_TIMEZONE"
 
     if [ -n "$OPENAI_API_KEY" ]; then
-        docker_cmd="$docker_cmd -e OPENAI_API_KEY=$OPENAI_API_KEY"    
+        docker_cmd="$docker_cmd -e OPENAI_API_KEY=$OPENAI_API_KEY"
     fi
 
     if [ -n "$ANTHROPIC_TOKEN" ]; then

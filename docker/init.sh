@@ -3,6 +3,20 @@
 # IgniStack Sandbox Extension Script
 # Extends the base Flexy Dev Sandbox with IgniStack (React + Firebase + WordPress with SQLite) capabilities
 
+# Configure timezone at runtime if TZ environment variable is set
+if [ -n "$TZ" ] && [ "$TZ" != "Etc/UTC" ]; then
+    echo "Configuring timezone: $TZ"
+    sudo ln -snf /usr/share/zoneinfo/$TZ /etc/localtime
+    echo $TZ | sudo tee /etc/timezone > /dev/null
+
+    # Update PHP timezone configuration
+    PHP_INI_DIR=$(php -r "echo PHP_CONFIG_FILE_SCAN_DIR;")
+    if [ -d "$PHP_INI_DIR" ]; then
+        echo "date.timezone = $TZ" | sudo tee $PHP_INI_DIR/99-timezone.ini > /dev/null
+        echo "PHP timezone configured: $TZ"
+    fi
+fi
+
 # Set working directory for IgniStack projects
 export WORKING_DIRECTORY=${WORKING_DIRECTORY:-/home/flexy/workspace}
 
@@ -91,6 +105,54 @@ if [ ! -f "$WORDPRESS_DIR/wp-content/database/.ht.sqlite" ]; then
     sqlite3 $WORDPRESS_DIR/wp-content/database/.ht.sqlite "VACUUM;"
     chmod 664 $WORDPRESS_DIR/wp-content/database/.ht.sqlite
     echo "SQLite database initialized."
+fi
+
+# Auto-update GitHub plugins if enabled (development mode)
+# Note: This happens BEFORE WordPress initialization to ensure fresh plugins
+if [ "$AUTO_UPDATE_PLUGINS" = "true" ] || [ "$AUTO_UPDATE_PLUGINS" = "1" ]; then
+    echo "=========================================="
+    echo "Auto-updating GitHub plugins (development mode)..."
+    echo "=========================================="
+
+    # Strategy:
+    # 1. If persistent instance will be used, update base WordPress first
+    #    (so when it's copied to persistent, it has latest plugins)
+    # 2. If persistent instance already exists, update it directly
+    # 3. If ephemeral, update base WordPress
+
+    if [ -n "$WP_INSTANCE_NAME" ] && [ -d "/home/flexy/wordpress-persistent" ]; then
+        # Persistent instance mode
+        if [ -f "/home/flexy/wordpress-persistent/wp-config.php" ]; then
+            # Persistent instance already exists - update it directly
+            echo "Updating plugins in existing persistent instance..."
+            UPDATE_DIR="/home/flexy/wordpress-persistent"
+        else
+            # First-time setup - update base, then it will be copied
+            echo "Updating plugins in base WordPress (will be copied to persistent)..."
+            UPDATE_DIR="/home/flexy/wordpress"
+        fi
+    else
+        # Ephemeral mode - update base WordPress
+        echo "Updating plugins in base WordPress (ephemeral mode)..."
+        UPDATE_DIR="/home/flexy/wordpress"
+    fi
+
+    # Export for the update script
+    export WORDPRESS_DIR="$UPDATE_DIR"
+
+    if command -v update-github-plugins.sh &> /dev/null; then
+        update-github-plugins.sh dev || echo "Warning: Plugin update failed but continuing..."
+    else
+        echo "Warning: update-github-plugins.sh not found, skipping auto-update"
+    fi
+
+    # Restore WORDPRESS_DIR to the value set by the logic above (lines 14-38)
+    if [ -n "$WP_INSTANCE_NAME" ] && [ -d "/home/flexy/wordpress-persistent" ]; then
+        export WORDPRESS_DIR="/home/flexy/wordpress-persistent"
+    else
+        export WORDPRESS_DIR="/home/flexy/wordpress"
+    fi
+    echo "=========================================="
 fi
 
 # Check if WordPress is already installed by checking for wp-config.php

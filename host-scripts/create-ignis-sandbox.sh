@@ -5,6 +5,25 @@
 
 set -e  # Exit on any error
 
+# Function to detect host timezone
+detect_timezone() {
+    # Try multiple methods to detect timezone
+    if [ -n "$TZ" ]; then
+        echo "$TZ"
+    elif [ -f /etc/timezone ]; then
+        cat /etc/timezone
+    elif [ -L /etc/localtime ]; then
+        # Extract timezone from symlink
+        readlink /etc/localtime | sed 's|.*/zoneinfo/||'
+    else
+        # Fallback to UTC
+        echo "Etc/UTC"
+    fi
+}
+
+# Detect and set host timezone
+HOST_TIMEZONE=$(detect_timezone)
+
 # Function to display usage
 show_usage() {
     echo "Usage: $0 [OPTIONS]"
@@ -23,6 +42,7 @@ show_usage() {
     echo "  --wp-db-pass PASS            WordPress DB password (default: '')"
     echo "  --wp-db-name NAME            WordPress DB name (default: wordpress)"
     echo "  --wp-instance NAME           Create persistent WordPress instance"
+    echo "  --auto-update-plugins        Auto-update GitHub plugins on startup (dev mode)"
     echo "  -t, --ttyd                   Expose ttyd port (port 9681)"
     echo "  -c, --cospec                 Expose CoSpec AI ports (ports 9280)"
     echo "  -s, --webtty                 Enable WebTTY mode"
@@ -32,6 +52,7 @@ show_usage() {
     echo "  $0 --name igni-dev-env --mount /home/user/project --port 8081"
     echo "  $0 --anthropic-token your-token --firebase-token your-firebase-token --webtty"
     echo "  $0 --name igni-env --cospec --mount /home/user/ignistack-project --wordpress-db-host mysql-container"
+    echo "  $0 --name igni-dev --auto-update-plugins --mount /home/user/project"
 }
 
 # Check if any arguments were provided
@@ -54,6 +75,7 @@ if [[ $# -eq 0 ]]; then
     WORDPRESS_DB_PASS=""
     WORDPRESS_DB_NAME="wordpress"
     WP_INSTANCE_NAME=""
+    AUTO_UPDATE_PLUGINS=false
     EXPOSE_TTYD=false
     EXPOSE_COSPEC=false
     ENABLE_WEBTTY=true
@@ -177,6 +199,7 @@ else
     WORDPRESS_DB_PASS=""
     WORDPRESS_DB_NAME="wordpress"
     WP_INSTANCE_NAME=""
+    AUTO_UPDATE_PLUGINS=false
     EXPOSE_TTYD=false
     EXPOSE_COSPEC=false
     ENABLE_WEBTTY=false
@@ -234,6 +257,10 @@ else
             --wp-instance)
                 WP_INSTANCE_NAME="$2"
                 shift 2
+                ;;
+            --auto-update-plugins)
+                AUTO_UPDATE_PLUGINS=true
+                shift
                 ;;
             -t|--ttyd)
                 EXPOSE_TTYD=true
@@ -374,6 +401,16 @@ if [ "$ENABLE_WEBTTY" = true ]; then
     RUN_CMD="$RUN_CMD -e ENABLE_WEBTTY=true"
     echo "Enabling WebTTY mode"
 fi
+
+# Add auto-update plugins flag if enabled
+if [ "$AUTO_UPDATE_PLUGINS" = true ]; then
+    RUN_CMD="$RUN_CMD -e AUTO_UPDATE_PLUGINS=true"
+    echo "Enabling auto-update for GitHub plugins (development mode)"
+fi
+
+# Set timezone to match host
+RUN_CMD="$RUN_CMD -e TZ=$HOST_TIMEZONE"
+echo "Setting container timezone to: $HOST_TIMEZONE"
 
 # Expose ttyd port if requested
 if [ "$EXPOSE_TTYD" = true ]; then
