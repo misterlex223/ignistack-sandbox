@@ -2,6 +2,8 @@
 .claude/
 
 # WordPress Persistent Instances
+# Note: Default location is now ~/.ignistack-instances (outside project)
+# Legacy project-local instances (kept for backward compatibility)
 wordpress-instances/
 
 # Docker volumes and temporary files

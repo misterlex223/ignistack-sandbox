@@ -167,7 +167,7 @@ docker exec <container> wp ignis-ai generate-form \
 - **`host-scripts/create-wp-instance.sh`**: WordPress instance lifecycle manager (17KB, 500+ lines)
 - **`host-scripts/create-ignis-sandbox.sh`**: General sandbox creator with `--wp-instance` support
 - **`docker/Dockerfile`**: Installs WordPress + SQLite plugin, creates `db.php` from template
-- **`wordpress-instances/<name>/`**: Host directories containing persistent WordPress data (gitignored)
+- **`~/.ignistack-instances/<name>/`**: Host directories containing persistent WordPress data (centralized location)
 
 ## Critical Implementation Details
 

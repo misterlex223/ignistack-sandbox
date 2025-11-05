@@ -358,11 +358,13 @@ Enables WordPress to use SQLite instead of MySQL.
 
 ### Instance Data
 
-Persistent WordPress instances are stored in `wordpress-instances/<name>/`:
+Persistent WordPress instances are stored in `~/.ignistack-instances/<name>/`:
 - `wp-config.php`: WordPress configuration
 - `wp-content/`: Themes, plugins, uploads
 - `wp-content/database/.ht.sqlite`: SQLite database
 - `.instance-info`: Instance metadata
+
+**Note**: Instances are stored in your home directory for centralized management across all projects.
 
 **Backup**: Simply copy the entire instance directory
 **Restore**: Copy directory back and start instance
@@ -398,7 +400,7 @@ For advanced users who want full control:
 docker run -d --name my-sandbox \
   -p 8080:80 \
   -p 9681:9681 \
-  -v $(pwd)/wordpress-instances/my-project:/home/flexy/wordpress-persistent \
+  -v ~/.ignistack-instances/my-project:/home/flexy/wordpress-persistent \
   -v /path/to/your/project:/home/flexy/workspace \
   -e WP_INSTANCE_NAME=my-project \
   -e OPENAI_API_KEY=your-api-key \
@@ -601,22 +603,23 @@ ignistack-sandbox/
 │   └── plugins/                     # Pre-installed plugins
 │       └── ignis-ai/                # AI integration plugin
 ├── cospec-profile/                  # CoSpec AI configuration
-├── wordpress-instances/             # Persistent WordPress data (gitignored)
-│   └── <instance-name>/
-│       ├── wp-config.php
-│       ├── wp-content/
-│       │   ├── schemas/             # Schema definitions
-│       │   ├── database/            # SQLite database
-│       │   ├── plugins/
-│       │   ├── themes/
-│       │   └── uploads/
-│       └── .instance-info
 ├── docs/                            # Documentation
 │   ├── WORDPRESS-INSTANCES.md
 │   ├── SQLITE-INTEGRATION.md
 │   ├── SCHEMA-SYSTEM-INTEGRATION.md
 │   └── AI-INTEGRATION.md
 └── README.md                        # This file
+
+~/.ignistack-instances/              # Persistent WordPress data (centralized)
+└── <instance-name>/
+    ├── wp-config.php
+    ├── .instance-info
+    └── wp-content/
+        ├── schemas/                 # Schema definitions
+        ├── database/                # SQLite database
+        ├── plugins/
+        ├── themes/
+        └── uploads/
 ```
 
 ## Command Reference

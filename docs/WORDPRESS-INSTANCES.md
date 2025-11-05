@@ -20,19 +20,20 @@ Each instance comes with essential plugins pre-installed, including:
 ## Architecture
 
 ```
+~/.ignistack-instances/            ← Centralized persistent WordPress data
+├── dev/                           ← Development instance
+│   ├── wp-content/
+│   │   ├── database/
+│   │   │   └── .ht.sqlite        ← SQLite database
+│   │   ├── plugins/
+│   │   ├── themes/
+│   │   └── uploads/
+│   ├── wp-config.php
+│   └── .instance-info             ← Instance metadata
+├── testing/                        ← Testing instance
+└── staging/                        ← Staging instance
+
 ignistack-sandbox/
-├── wordpress-instances/           ← All persistent WordPress data
-│   ├── dev/                       ← Development instance
-│   │   ├── wp-content/
-│   │   │   ├── database/
-│   │   │   │   └── .ht.sqlite    ← SQLite database
-│   │   │   ├── plugins/
-│   │   │   ├── themes/
-│   │   │   └── uploads/
-│   │   ├── wp-config.php
-│   │   └── .instance-info         ← Instance metadata
-│   ├── testing/                    ← Testing instance
-│   └── staging/                    ← Staging instance
 └── host-scripts/
     ├── create-wp-instance.sh       ← Dedicated WordPress manager
     └── create-ignis-sandbox.sh     ← Main sandbox script (with WP support)

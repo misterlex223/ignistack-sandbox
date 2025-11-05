@@ -28,8 +28,8 @@ HOST_TIMEZONE=$(detect_timezone)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Default configuration
-WP_INSTANCES_DIR_DEFAULT="$PROJECT_ROOT/wordpress-instances"
+# Default configuration - use home directory for centralized instance management
+WP_INSTANCES_DIR_DEFAULT="$HOME/.ignistack-instances"
 IMAGE_NAME="ghcr.io/misterlex223/ignistack-sandbox"
 DEFAULT_WP_PORT=80
 DEFAULT_TTYD_PORT=9681
@@ -125,33 +125,24 @@ find_instance_dir() {
     local instance_name=$1
     local original_instances_dir="$WP_INSTANCES_DIR"
     local instance_dir="$WP_INSTANCES_DIR/$instance_name"
-    
+
     # First check in the current WP_INSTANCES_DIR (which may have been set by command args)
     if [ -d "$instance_dir" ]; then
         echo "$instance_dir"
         return 0
     fi
-    
-    # Next try default directory
+
+    # Next try default directory if different
     if [ "$WP_INSTANCES_DIR" != "$WP_INSTANCES_DIR_DEFAULT" ]; then
         WP_INSTANCES_DIR="$WP_INSTANCES_DIR_DEFAULT"
         instance_dir="$WP_INSTANCES_DIR/$instance_name"
-        
+
         if [ -d "$instance_dir" ]; then
             echo "$instance_dir"
             return 0
         fi
     fi
-    
-    # Next try default instances directory with wordpress-instances subdirectory
-    WP_INSTANCES_DIR="$WP_INSTANCES_DIR_DEFAULT/wordpress-instances"
-    instance_dir="$WP_INSTANCES_DIR/$instance_name"
-    
-    if [ -d "$instance_dir" ]; then
-        echo "$instance_dir"
-        return 0
-    fi
-    
+
     # Restore original directory and return failure
     WP_INSTANCES_DIR="$original_instances_dir"
     return 1
@@ -555,10 +546,11 @@ list_instances() {
     print_message "$BLUE" "===================="
 
     local total_instances=0
-    
-    # List instances from current WP_INSTANCES_DIR
+
+    # List instances from WP_INSTANCES_DIR
     if [ -d "$WP_INSTANCES_DIR" ] && [ "$(ls -A $WP_INSTANCES_DIR 2>/dev/null)" ]; then
-        print_message "$BLUE" "Instances in current directory ($WP_INSTANCES_DIR):"
+        print_message "$BLUE" "Storage location: $WP_INSTANCES_DIR"
+        print_message "$BLUE" ""
         printf "%-20s %-15s %-30s %-10s\n" "NAME" "STATUS" "CONTAINER" "SIZE"
         printf "%-20s %-15s %-30s %-10s\n" "----" "------" "---------" "----"
 
@@ -579,63 +571,6 @@ list_instances() {
                 ((total_instances++))
             fi
         done
-    fi
-
-    # List instances from default directory if it's different from current
-    if [ "$WP_INSTANCES_DIR" != "$WP_INSTANCES_DIR_DEFAULT" ] && [ -d "$WP_INSTANCES_DIR_DEFAULT" ]; then
-        local default_instances=$(find "$WP_INSTANCES_DIR_DEFAULT" -mindepth 1 -maxdepth 1 -type d)
-        if [ -n "$default_instances" ]; then
-            print_message "$BLUE" "\nInstances in default directory ($WP_INSTANCES_DIR_DEFAULT):"
-            printf "%-20s %-15s %-30s %-10s\n" "NAME" "STATUS" "CONTAINER" "SIZE"
-            printf "%-20s %-15s %-30s %-10s\n" "----" "------" "---------" "----"
-            
-            for instance_dir in "$WP_INSTANCES_DIR_DEFAULT"/*; do
-                if [ -d "$instance_dir" ]; then
-                    local instance_name=$(basename "$instance_dir")
-                    local container_name=$(get_container_name "$instance_name")
-                    local status="stopped"
-                    local size=$(du -sh "$instance_dir" 2>/dev/null | cut -f1)
-
-                    if container_is_running "$container_name"; then
-                        status="${GREEN}running${NC}"
-                    else
-                        status="${YELLOW}stopped${NC}"
-                    fi
-
-                    printf "%-20s %-24s %-30s %-10s\n" "$instance_name" "$(echo -e $status)" "$container_name" "$size"
-                    ((total_instances++))
-                fi
-            done
-        fi
-    fi
-
-    # List instances from default wordpress-instances subdirectory if it's different
-    local wp_instances_subdir="$WP_INSTANCES_DIR_DEFAULT/wordpress-instances"
-    if [ "$WP_INSTANCES_DIR" != "$wp_instances_subdir" ] && [ -d "$wp_instances_subdir" ]; then
-        local wp_instances=$(find "$wp_instances_subdir" -mindepth 1 -maxdepth 1 -type d)
-        if [ -n "$wp_instances" ]; then
-            print_message "$BLUE" "\nInstances in default wordpress-instances subdirectory ($wp_instances_subdir):"
-            printf "%-20s %-15s %-30s %-10s\n" "NAME" "STATUS" "CONTAINER" "SIZE"
-            printf "%-20s %-15s %-30s %-10s\n" "----" "------" "---------" "----"
-            
-            for instance_dir in "$wp_instances_subdir"/*; do
-                if [ -d "$instance_dir" ]; then
-                    local instance_name=$(basename "$instance_dir")
-                    local container_name=$(get_container_name "$instance_name")
-                    local status="stopped"
-                    local size=$(du -sh "$instance_dir" 2>/dev/null | cut -f1)
-
-                    if container_is_running "$container_name"; then
-                        status="${GREEN}running${NC}"
-                    else
-                        status="${YELLOW}stopped${NC}"
-                    fi
-
-                    printf "%-20s %-24s %-30s %-10s\n" "$instance_name" "$(echo -e $status)" "$container_name" "$size"
-                    ((total_instances++))
-                fi
-            done
-        fi
     fi
 
     if [ $total_instances -eq 0 ]; then
