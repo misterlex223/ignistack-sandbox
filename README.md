@@ -76,26 +76,47 @@ IgniStack is a modern, AI-powered development stack that combines:
 
 ## Quick Start
 
-### 1. Build the Docker Image
+### Option 1: Using Pre-built Image (Recommended for Most Users)
+
+The fastest way to get started is using the pre-built Docker image from GitHub Container Registry:
 
 ```bash
-./host-scripts/build-docker.sh
-```
+# Install IgniStack CLI
+curl -fsSL https://raw.githubusercontent.com/misterlex223/ignistack-sandbox/main/install-ignistack.sh | bash
 
-### 2. Create a WordPress Instance
-
-```bash
-# Create a persistent development instance
-./host-scripts/create-wp-instance.sh create my-project --port 8080
+# Initialize your first project
+ignistack init my-project
 
 # Access WordPress at http://localhost:8080
 # Default credentials: admin / password123
 ```
 
-### 3. Set Up Your Project
+### Option 2: Building from Source
+
+For developers who want to modify or extend IgniStack:
 
 ```bash
-# Create sandbox with workspace mount
+# Clone the repository
+git clone https://github.com/misterlex223/ignistack-sandbox.git
+cd ignistack-sandbox
+
+# Build the Docker image
+./host-scripts/build-docker.sh
+
+# Create a persistent development instance
+./host-scripts/create-wp-instance.sh create my-project --port 8080
+```
+
+### Option 3: Integration with Existing Projects
+
+```bash
+# In your existing project directory
+cd /path/to/your-project
+
+# Initialize IgniStack with workspace mount
+ignistack init existing-project --mount $(pwd)
+
+# Or using the host script
 ./host-scripts/create-ignis-sandbox.sh \
   --name my-project \
   --wp-instance my-project \
@@ -602,12 +623,17 @@ ignistack-sandbox/
 │   ├── init.sh                      # Container initialization
 │   └── plugins/                     # Pre-installed plugins
 │       └── ignis-ai/                # AI integration plugin
+├── .claude-skills/                  # Claude Code Skills
+│   └── ignistack/                   # IgniStack integration skill
 ├── cospec-profile/                  # CoSpec AI configuration
 ├── docs/                            # Documentation
+│   ├── INTEGRATION-GUIDE.md         # Integration guide for other projects
 │   ├── WORDPRESS-INSTANCES.md
 │   ├── SQLITE-INTEGRATION.md
 │   ├── SCHEMA-SYSTEM-INTEGRATION.md
 │   └── AI-INTEGRATION.md
+├── ignistack-cli.sh                 # Standalone CLI tool
+├── install-ignistack.sh             # Installation script
 └── README.md                        # This file
 
 ~/.ignistack-instances/              # Persistent WordPress data (centralized)
@@ -624,7 +650,42 @@ ignistack-sandbox/
 
 ## Command Reference
 
-### Build and Setup
+### Using the IgniStack CLI (Recommended)
+
+The `ignistack` CLI provides a unified interface for all operations:
+
+```bash
+# Install CLI (one-time setup)
+curl -fsSL https://raw.githubusercontent.com/misterlex223/ignistack-sandbox/main/install-ignistack.sh | bash
+
+# Environment Management
+ignistack init <project-name>                       # Initialize new project
+ignistack create-instance <name>                    # Create WordPress instance
+ignistack list                                      # List all instances
+ignistack info <name>                               # Show instance details
+
+# Instance Lifecycle
+ignistack start <name>                              # Start instance
+ignistack stop <name>                               # Stop instance
+ignistack restart <name>                            # Restart instance
+ignistack remove <name>                             # Remove instance
+
+# Development
+ignistack wp <name> <command>                       # Run WP-CLI command
+ignistack schema <action> <name>                    # Manage schemas
+ignistack ai <action> <name>                        # Run AI operations
+
+# Troubleshooting
+ignistack logs <container>                          # View container logs
+ignistack shell <container>                         # Access container shell
+ignistack doctor                                    # Run diagnostics
+```
+
+### Using Host Scripts (Advanced)
+
+For developers working directly with the repository:
+
+#### Build and Setup
 ```bash
 ./host-scripts/build-docker.sh                      # Build image
 ```
@@ -664,6 +725,44 @@ docker stop <container-name>                         # Stop container
 docker restart <container-name>                      # Restart container
 ```
 
+## Integration with Other Projects
+
+IgniStack is designed to be easily integrated into any project workflow. For detailed integration instructions, see [Integration Guide](docs/INTEGRATION-GUIDE.md).
+
+### Quick Integration
+
+```bash
+# Install IgniStack CLI
+curl -fsSL https://raw.githubusercontent.com/misterlex223/ignistack-sandbox/main/install-ignistack.sh | bash
+
+# In your project directory
+cd /path/to/your-project
+ignistack init your-project --mount $(pwd)
+```
+
+### Claude Code Skill
+
+IgniStack includes a Claude Code Skill for natural-language interaction:
+
+```
+/ignistack init my-project
+/ignistack start my-project
+/ignistack schema export-all --output=./src/types
+```
+
+### Docker Image
+
+Use the pre-built image directly:
+
+```bash
+docker run -d \
+  --name my-ignistack \
+  -p 8080:80 \
+  -e WP_INSTANCE_NAME=my-project \
+  -v ~/.ignistack-instances/my-project:/home/flexy/wordpress-persistent \
+  ghcr.io/misterlex223/ignistack-sandbox:latest
+```
+
 ## Contributing
 
 Issues and pull requests are welcome! Please see individual plugin repositories for plugin-specific contributions.
@@ -685,3 +784,5 @@ Built with:
 ---
 
 **Ready to build modern, AI-powered web applications with IgniStack!** 🚀
+
+**Need to integrate IgniStack into your existing project?** Check out the [Integration Guide](docs/INTEGRATION-GUIDE.md)
