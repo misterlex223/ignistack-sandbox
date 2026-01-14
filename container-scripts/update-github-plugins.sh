@@ -135,6 +135,19 @@ update_plugin() {
     echo "$new_version" > "$plugin_dir/.version"
     rm -rf "$plugin_dir/.git"
 
+    # Special handling for SQLite plugin: recreate db.php drop-in
+    if [ "$plugin_name" = "sqlite-database-integration" ]; then
+        log_info "Recreating wp-content/db.php drop-in for SQLite..."
+        if [ -f "$plugin_dir/db.copy" ]; then
+            sed "s|{SQLITE_IMPLEMENTATION_FOLDER_PATH}|$plugin_dir|g; \
+                 s|{SQLITE_PLUGIN}|sqlite-database-integration/load.php|g" \
+                "$plugin_dir/db.copy" > "$WORDPRESS_DIR/wp-content/db.php"
+            log_info "✓ SQLite db.php drop-in recreated"
+        else
+            log_warn "db.copy template not found in SQLite plugin"
+        fi
+    fi
+
     # Install composer dependencies if composer.json exists
     if [ -f "$plugin_dir/composer.json" ]; then
         log_info "Installing Composer dependencies..."

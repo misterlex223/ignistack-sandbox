@@ -225,12 +225,6 @@ create_instance() {
         esac
     done
 
-    # If mount path is provided, set WP_INSTANCES_DIR to mount_path/wordpress-instances
-    if [ -n "$mount_path" ] && [ -d "$mount_path" ]; then
-        WP_INSTANCES_DIR="$mount_path/wordpress-instances"
-        print_message "$BLUE" "Using mount path with wordpress-instances subdirectory: $WP_INSTANCES_DIR"
-    fi
-
     ensure_instances_dir
 
     if instance_exists "$instance_name"; then
@@ -297,9 +291,7 @@ start_instance() {
                 mount_path=${args_copy[1]}
                 # If mount path is provided and is a valid directory, update WP_INSTANCES_DIR to include subdirectory
                 if [ -n "$mount_path" ] && [ -d "$mount_path" ]; then
-                    WP_INSTANCES_DIR="$mount_path/wordpress-instances"
                     has_mount_option=true
-                    print_message "$BLUE" "Using mount path with wordpress-instances subdirectory: $WP_INSTANCES_DIR"
                 fi
                 ;;
         esac
