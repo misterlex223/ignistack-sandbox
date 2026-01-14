@@ -2,6 +2,10 @@
 .claude/*
 !.claude/commands/
 
+# IgniStack project configuration
+.ignistack/config
+!.ignistack/config.example
+
 # WordPress Persistent Instances
 # Note: Default location is now ~/.ignistack-instances (outside project)
 # Legacy project-local instances (kept for backward compatibility)

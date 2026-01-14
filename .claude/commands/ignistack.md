@@ -24,17 +24,31 @@ Or if `ignistack` is in PATH:
 ignistack {{command_args}}
 ```
 
+**Project Configuration**: If the user is in a directory with `.ignistack/config`, many commands can be run without specifying the project name:
+- `start` - Start project (uses project name from config)
+- `stop` - Stop project
+- `info` - Show project info
+- `wp <command>` - Run WP-CLI command
+- `schema <action>` - Manage schemas
+- `ai <action>` - Run AI operations
+
+To initialize a project configuration:
+```bash
+ignistack project init [project-name]
+```
+
 Common commands:
-- `init <project-name>` - Initialize new project
+- `project init [name]` - Initialize project config (.ignistack/config)
+- `init <project-name>` - Initialize new project and create instance
 - `create-instance <name>` - Create WordPress instance
 - `list` - List all instances
-- `start <name>` - Start instance
-- `stop <name>` - Stop instance
-- `info <name>` - Show instance details
+- `start [name]` - Start instance (uses project config if available)
+- `stop [name]` - Stop instance
+- `info [name]` - Show instance details
 - `remove <name>` - Remove instance
-- `wp <name> <command>` - Run WP-CLI command
-- `schema <action> <name>` - Manage schemas
-- `ai <action> <name>` - Run AI operations
+- `wp [name] <command>` - Run WP-CLI command
+- `schema <action> [name]` - Manage schemas
+- `ai <action> [name]` - Run AI operations
 - `logs <container>` - View container logs
 - `shell <container>` - Access container shell
 - `doctor` - Run diagnostics

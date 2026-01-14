@@ -108,10 +108,49 @@ Add IgniStack to an existing project:
 ```bash
 cd /path/to/your-project
 
-# Initialize with project mount
-ignistack init existing-project --mount $(pwd)
+# Initialize project configuration
+ignistack project init
 
-# Project files now available at /home/flexy/workspace in container
+# This creates .ignistack/config with your project settings
+# Now you can run commands without specifying the project name!
+
+# Create and start the instance
+ignistack create-instance $(basename $(pwd)) --port 8080
+ignistack start  # Uses project name from config
+
+# Run WP-CLI commands without specifying instance
+ignistack wp plugin list
+ignistack wp post list
+```
+
+### Pattern 4: Project Configuration with Custom Settings
+
+For advanced configuration, create `.ignistack/config` manually or use the CLI with options:
+
+```bash
+# Initialize with custom ports
+ignistack project init my-app \
+  --port 8080 \
+  --firebase-port 5000 \
+  --webtty-port 9681
+```
+
+The `.ignistack/config` file stores:
+- `project_name`: Instance identifier
+- `port`: WordPress port
+- `firebase_port`, `firebase_ui_port`: Firebase emulator ports
+- `webtty_port`: WebTTY terminal port
+- `cospec_port`: CoSpec AI editor port
+- `instance_dir`: Custom instance directory (optional)
+- `image`: Custom Docker image (optional)
+
+With this configuration, commands become simpler:
+```bash
+# Before: ignistack start my-project
+# After:  ignistack start
+
+# Before: ignistack wp my-project plugin list
+# After:  ignistack wp plugin list
 ```
 
 ## Common Integration Scenarios

@@ -19,9 +19,84 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Project configuration (will be loaded if found)
+PROJECT_CONFIG_LOADED=false
+PROJECT_NAME=""
+PROJECT_PORT=""
+PROJECT_FIREBASE_PORT=""
+PROJECT_FIREBASE_UI_PORT=""
+PROJECT_TTYD_PORT=""
+PROJECT_COSPEC_PORT=""
+PROJECT_INSTANCE_DIR=""
+PROJECT_IMAGE=""
+PROJECT_ENV_VARS=()
+
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
+
+find_project_root() {
+    local current_dir="$PWD"
+
+    while [[ "$current_dir" != "/" ]]; do
+        if [[ -f "$current_dir/.ignistack/config" ]]; then
+            echo "$current_dir"
+            return 0
+        fi
+        current_dir="$(dirname "$current_dir")"
+    done
+
+    return 1
+}
+
+load_project_config() {
+    local project_root
+    project_root="$(find_project_root)"
+
+    if [[ $? -ne 0 ]]; then
+        return 1
+    fi
+
+    local config_file="$project_root/.ignistack/config"
+
+    if [[ ! -f "$config_file" ]]; then
+        return 1
+    fi
+
+    # Source the config file
+    # shellcheck source=/dev/null
+    source "$config_file"
+
+    PROJECT_CONFIG_LOADED=true
+    PROJECT_ROOT="$project_root"
+
+    # Export variables with IG_ prefix to avoid conflicts
+    [[ -n "${project_name:-}" ]] && PROJECT_NAME="$project_name"
+    [[ -n "${port:-}" ]] && PROJECT_PORT="$port"
+    [[ -n "${firebase_port:-}" ]] && PROJECT_FIREBASE_PORT="$firebase_port"
+    [[ -n "${firebase_ui_port:-}" ]] && PROJECT_FIREBASE_UI_PORT="$firebase_ui_port"
+    [[ -n "${webtty_port:-}" ]] && PROJECT_TTYD_PORT="$webtty_port"
+    [[ -n "${cospec_port:-}" ]] && PROJECT_COSPEC_PORT="$cospec_port"
+    [[ -n "${instance_dir:-}" ]] && PROJECT_INSTANCE_DIR="$instance_dir"
+    [[ -n "${image:-}" ]] && PROJECT_IMAGE="$image"
+
+    # Load environment variables
+    for var in "${!env_@}"; do
+        local key="${var#env_}"
+        local value="${!var}"
+        PROJECT_ENV_VARS+=("$key=$value")
+    done
+
+    return 0
+}
+
+get_project_instance_name() {
+    if [[ "$PROJECT_CONFIG_LOADED" == true ]] && [[ -n "$PROJECT_NAME" ]]; then
+        echo "$PROJECT_NAME"
+        return 0
+    fi
+    return 1
+}
 
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -238,6 +313,126 @@ cmd_init() {
     log_info "WebTTY: http://localhost:$ttyd_port"
 }
 
+cmd_project_init() {
+    local project_name=""
+    local port="8080"
+    local firebase_port="5000"
+    local firebase_ui_port="4000"
+    local webtty_port="9681"
+    local cospec_port="9280"
+    local instance_dir=""
+    local image=""
+    local create_instance_flag=false
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --port)
+                port="$2"
+                shift 2
+                ;;
+            --firebase-port)
+                firebase_port="$2"
+                shift 2
+                ;;
+            --firebase-ui-port)
+                firebase_ui_port="$2"
+                shift 2
+                ;;
+            --webtty-port)
+                webtty_port="$2"
+                shift 2
+                ;;
+            --cospec-port)
+                cospec_port="$2"
+                shift 2
+                ;;
+            --instance-dir)
+                instance_dir="$2"
+                shift 2
+                ;;
+            --image)
+                image="$2"
+                shift 2
+                ;;
+            --create)
+                create_instance_flag=true
+                shift
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                return 1
+                ;;
+            *)
+                project_name="$1"
+                shift
+                ;;
+        esac
+    done
+
+    # Check if already in a project
+    if [[ -f ".ignistack/config" ]]; then
+        log_warning "Project configuration already exists at .ignistack/config"
+        read -p "Overwrite? (yes/no): " confirm
+        if [[ "$confirm" != "yes" ]]; then
+            log_info "Aborted"
+            return 0
+        fi
+    fi
+
+    # Use current directory name as default project name
+    if [[ -z "$project_name" ]]; then
+        project_name="$(basename "$PWD")"
+        log_info "Using directory name as project name: $project_name"
+    fi
+
+    # Create .ignistack directory
+    mkdir -p .ignistack
+
+    # Create config file
+    local config_file=".ignistack/config"
+    cat > "$config_file" <<EOF
+# IgniStack Project Configuration
+# Generated: $(date '+%Y-%m-%d %H:%M:%S')
+
+project_name=$project_name
+port=$port
+firebase_port=$firebase_port
+firebase_ui_port=$firebase_ui_port
+webtty_port=$webtty_port
+cospec_port=$cospec_port
+EOF
+
+    if [[ -n "$instance_dir" ]]; then
+        echo "instance_dir=$instance_dir" >> "$config_file"
+    fi
+
+    if [[ -n "$image" ]]; then
+        echo "image=$image" >> "$config_file"
+    fi
+
+    log_success "Project configuration created: .ignistack/config"
+    log_info "Project name: $project_name"
+    log_info ""
+    log_info "You can now use IgniStack commands without specifying the project name:"
+    log_info "  ignistack start        # Start the project"
+    log_info "  ignistack stop         # Stop the project"
+    log_info "  ignistack info         # Show project info"
+    log_info "  ignistack wp plugin list  # Run WP-CLI commands"
+
+    # Create instance if requested
+    if [[ "$create_instance_flag" == true ]]; then
+        log_info ""
+        log_info "Creating IgniStack instance..."
+        cmd_init "$project_name" \
+            --port "$port" \
+            --firebase-port "$firebase_port" \
+            --firebase-ui-port "$firebase_ui_port" \
+            --ttyd-port "$webtty_port" \
+            --cospec-port "$cospec_port"
+    fi
+}
+
 cmd_create_instance() {
     local instance_name=""
     local port="8080"
@@ -381,10 +576,15 @@ cmd_list() {
 cmd_start() {
     local instance_name="$1"
 
+    # Try to get instance name from project config
     if [[ -z "$instance_name" ]]; then
-        log_error "Instance name is required"
-        echo "Usage: $0 start <name>"
-        return 1
+        if instance_name="$(get_project_instance_name)"; then
+            log_info "Using project instance: $instance_name"
+        else
+            log_error "Instance name is required (or run from a project directory with .ignistack/config)"
+            echo "Usage: $0 start <name>"
+            return 1
+        fi
     fi
 
     # Check if instance exists
@@ -455,10 +655,15 @@ cmd_start() {
 cmd_stop() {
     local instance_name="$1"
 
+    # Try to get instance name from project config
     if [[ -z "$instance_name" ]]; then
-        log_error "Instance name is required"
-        echo "Usage: $0 stop <name>"
-        return 1
+        if instance_name="$(get_project_instance_name)"; then
+            log_info "Using project instance: $instance_name"
+        else
+            log_error "Instance name is required (or run from a project directory with .ignistack/config)"
+            echo "Usage: $0 stop <name>"
+            return 1
+        fi
     fi
 
     local container_name
@@ -483,10 +688,15 @@ cmd_stop() {
 cmd_restart() {
     local instance_name="$1"
 
+    # Try to get instance name from project config
     if [[ -z "$instance_name" ]]; then
-        log_error "Instance name is required"
-        echo "Usage: $0 restart <name>"
-        return 1
+        if instance_name="$(get_project_instance_name)"; then
+            log_info "Using project instance: $instance_name"
+        else
+            log_error "Instance name is required (or run from a project directory with .ignistack/config)"
+            echo "Usage: $0 restart <name>"
+            return 1
+        fi
     fi
 
     cmd_stop "$instance_name"
@@ -549,14 +759,18 @@ cmd_remove() {
 }
 
 cmd_info() {
-    local instance_name="$1"
+    local instance_name="${1:-}"
 
+    # Try to get instance name from project config
     if [[ -z "$instance_name" ]]; then
-        log_error "Instance name is required"
-        echo "Usage: $0 info <name>"
-        return 1
+        if instance_name="$(get_project_instance_name)"; then
+            log_info "Using project instance: $instance_name"
+        else
+            log_error "Instance name is required (or run from a project directory with .ignistack/config)"
+            echo "Usage: $0 info <name>"
+            return 1
+        fi
     fi
-
     # Check if instance exists
     if ! check_instance_exists "$instance_name"; then
         return 1
@@ -609,10 +823,15 @@ cmd_wp() {
     local instance_name="${1:-}"
     shift || true
 
+    # Try to get instance name from project config
     if [[ -z "$instance_name" ]]; then
-        log_error "Instance name is required"
-        echo "Usage: $0 wp <instance-name> <wp-cli-command>"
-        return 1
+        if instance_name="$(get_project_instance_name)"; then
+            log_info "Using project instance: $instance_name"
+        else
+            log_error "Instance name is required (or run from a project directory with .ignistack/config)"
+            echo "Usage: $0 wp <instance-name> <wp-cli-command>"
+            return 1
+        fi
     fi
 
     local container_name
@@ -632,6 +851,16 @@ cmd_schema() {
 
     local instance_name="${1:-}"
     shift || true
+
+    # Try to get instance name from project config
+    if [[ -z "$instance_name" ]]; then
+        if instance_name="$(get_project_instance_name)"; then
+            log_info "Using project instance: $instance_name"
+        else
+            log_error "Instance name is required (or run from a project directory with .ignistack/config)"
+            return 1
+        fi
+    fi
 
     case "$action" in
         list)
@@ -675,6 +904,16 @@ cmd_ai() {
 
     local instance_name="${1:-}"
     shift || true
+
+    # Try to get instance name from project config
+    if [[ -z "$instance_name" ]]; then
+        if instance_name="$(get_project_instance_name)"; then
+            log_info "Using project instance: $instance_name"
+        else
+            log_error "Instance name is required (or run from a project directory with .ignistack/config)"
+            return 1
+        fi
+    fi
 
     case "$action" in
         generate-alt-text)
@@ -822,20 +1061,21 @@ USAGE:
 COMMANDS:
     Environment Setup:
         init <project-name>         Initialize a new IgniStack environment
+        project init [name]         Initialize project config (.ignistack/config)
         create-instance <name>      Create a new WordPress instance
         list                        List all instances
 
     Instance Management:
-        start <name>                Start an instance
-        stop <name>                 Stop an instance
-        restart <name>              Restart an instance
-        info <name>                 Show instance details
+        start [name]                Start an instance (uses project config if available)
+        stop [name]                 Stop an instance (uses project config if available)
+        restart [name]              Restart an instance (uses project config if available)
+        info [name]                 Show instance details (uses project config if available)
         remove <name>               Remove an instance (permanent!)
 
     Development:
-        wp <name> <command>         Run WP-CLI command in instance
-        schema <action> <name>      Manage schemas (list, validate, register, export)
-        ai <action> <name>          Run AI operations
+        wp [name] <command>         Run WP-CLI command (uses project config if available)
+        schema <action> [name]      Manage schemas (uses project config if available)
+        ai <action> [name]          Run AI operations (uses project config if available)
 
     Troubleshooting:
         logs <container>            Show container logs
@@ -856,6 +1096,9 @@ EOF
 }
 
 main() {
+    # Try to load project config at startup (don't fail if not found)
+    load_project_config || true
+
     if [[ $# -eq 0 ]]; then
         show_help
         exit 0
@@ -867,6 +1110,25 @@ main() {
     case "$command" in
         init)
             cmd_init "$@"
+            ;;
+        project)
+            if [[ $# -eq 0 ]]; then
+                log_error "Project command requires a subcommand (init, config, etc.)"
+                echo "Usage: $0 project init [options]"
+                exit 1
+            fi
+            local subcmd="$1"
+            shift
+            case "$subcmd" in
+                init)
+                    cmd_project_init "$@"
+                    ;;
+                *)
+                    log_error "Unknown project subcommand: $subcmd"
+                    echo "Available: init"
+                    exit 1
+                    ;;
+            esac
             ;;
         create-instance)
             cmd_create_instance "$@"
