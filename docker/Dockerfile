@@ -110,9 +110,9 @@ RUN git clone --depth 1 --branch ${SYNC_FIRE_VERSION} https://github.com/misterl
     mkdir -p /home/flexy/wordpress/wp-content/plugins/sync-fire-wp && \
     # Move the actual plugin files from the subdirectory to the correct location
     cp -r /tmp/sync-fire-wp/sync-fire-wp/* /home/flexy/wordpress/wp-content/plugins/sync-fire-wp && \
-    # Install Composer dependencies
+    # Install Composer dependencies (ignore platform reqs for grpc extension)
     cd /home/flexy/wordpress/wp-content/plugins/sync-fire-wp && \
-    composer install --no-dev --optimize-autoloader && \
+    composer install --no-dev --optimize-autoloader --ignore-platform-reqs && \
     # Clean up temp directory
     rm -rf /tmp/sync-fire-wp
 
@@ -120,7 +120,7 @@ RUN git clone --depth 1 --branch ${SYNC_FIRE_VERSION} https://github.com/misterl
 COPY docker/plugins/ignis-ai /home/flexy/wordpress/wp-content/plugins/ignis-ai
 RUN sudo chown -R flexy:flexy /home/flexy/wordpress/wp-content/plugins/ignis-ai && \
     cd /home/flexy/wordpress/wp-content/plugins/ignis-ai && \
-    composer install --no-dev --optimize-autoloader
+    composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 # Setup project directory
 WORKDIR /home/flexy/workspace
