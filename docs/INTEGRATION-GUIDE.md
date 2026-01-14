@@ -214,9 +214,12 @@ environment:
   OPENAI_API_KEY: ${OPENAI_API_KEY}
 ```
 
-## Claude Code Skill Usage
+## Claude Code Skill & Commands Usage
 
-When using Claude Code, the IgniStack Skill provides natural language commands:
+When using Claude Code, IgniStack provides both:
+
+1. **Skill**: Context and documentation about IgniStack capabilities
+2. **Slash Command (`/ignistack`)**: Executes actual operations
 
 ```
 # Initialize a project
@@ -232,11 +235,11 @@ When using Claude Code, the IgniStack Skill provides natural language commands:
 /ignistack info my-new-project
 ```
 
-The Skill automatically handles:
-- Container management
-- Port allocation
-- Volume mounting
-- Service configuration
+The `/ignistack` command automatically:
+1. Checks if CLI is installed
+2. Executes the requested operation via `ignistack-cli.sh`
+3. Provides clear output and error handling
+4. Handles container management, port allocation, volume mounting
 
 ## Architecture Integration
 

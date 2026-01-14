@@ -1,5 +1,6 @@
 # AI Coder configuration
-.claude/
+.claude/*
+!.claude/commands/
 
 # WordPress Persistent Instances
 # Note: Default location is now ~/.ignistack-instances (outside project)

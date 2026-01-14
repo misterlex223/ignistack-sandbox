@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 # Configuration
 INSTALL_DIR="${HOME}/.ignistack"
 CLI_URL="https://raw.githubusercontent.com/misterlex223/ignistack-sandbox/main/ignistack-cli.sh"
-SKILL_URL="https://raw.githubusercontent.com/misterlex223/ignistack-sandbox/main/.claude-skills/ignistack/skill.md"
+SKILL_URL="https://raw.githubusercontent.com/misterlex223/ignistack-sandbox/main/.claude-skills/ignistack/SKILL.md"
 
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -102,11 +102,11 @@ install_skill() {
     local skill_dir="$HOME/.claude/skills/ignistack"
     mkdir -p "$skill_dir"
 
-    local skill_file="$skill_dir/skill.md"
+    local skill_file="$skill_dir/SKILL.md"
 
     # Copy from local if this is the ignistack-sandbox repo
-    if [[ -f "./.claude-skills/ignistack/skill.md" ]]; then
-        cp ./.claude-skills/ignistack/skill.md "$skill_file"
+    if [[ -f "./.claude-skills/ignistack/SKILL.md" ]]; then
+        cp ./.claude-skills/ignistack/SKILL.md "$skill_file"
         log_success "Skill installed from local source"
     else
         # Download from GitHub
@@ -119,6 +119,35 @@ install_skill() {
             return 1
         fi
         log_success "Skill downloaded from GitHub"
+    fi
+
+    return 0
+}
+
+install_commands() {
+    log_info "Installing Claude Code Commands..."
+
+    local commands_dir="$HOME/.claude/commands"
+    mkdir -p "$commands_dir"
+
+    local command_file="$commands_dir/ignistack.md"
+    local command_url="https://raw.githubusercontent.com/misterlex223/ignistack-sandbox/main/.claude/commands/ignistack.md"
+
+    # Copy from local if this is the ignistack-sandbox repo
+    if [[ -f "./.claude/commands/ignistack.md" ]]; then
+        cp ./.claude/commands/ignistack.md "$command_file"
+        log_success "Command installed from local source"
+    else
+        # Download from GitHub
+        if command -v curl &> /dev/null; then
+            curl -fsSL "$command_url" -o "$command_file"
+        elif command -v wget &> /dev/null; then
+            wget -q "$command_url" -O "$command_file"
+        else
+            log_warning "Neither curl nor wget is available - skipping command installation"
+            return 0
+        fi
+        log_success "Command downloaded from GitHub"
     fi
 
     return 0
@@ -193,10 +222,17 @@ verify_installation() {
     fi
 
     # Check Skill
-    if [[ -f "$HOME/.claude/skills/ignistack/skill.md" ]]; then
+    if [[ -f "$HOME/.claude/skills/ignistack/SKILL.md" ]]; then
         log_success "Claude Code Skill installed"
     else
         log_warning "Claude Code Skill not found (optional)"
+    fi
+
+    # Check Commands
+    if [[ -f "$HOME/.claude/commands/ignistack.md" ]]; then
+        log_success "Claude Code Commands installed"
+    else
+        log_warning "Claude Code Commands not found (optional)"
     fi
 
     return 0
@@ -256,6 +292,12 @@ main() {
     # Install Skill
     if ! install_skill; then
         log_warning "Failed to install Skill (optional)"
+    fi
+    echo
+
+    # Install Commands
+    if ! install_commands; then
+        log_warning "Failed to install Commands (optional)"
     fi
     echo
 

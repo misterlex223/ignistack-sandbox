@@ -623,6 +623,9 @@ ignistack-sandbox/
 │   ├── init.sh                      # Container initialization
 │   └── plugins/                     # Pre-installed plugins
 │       └── ignis-ai/                # AI integration plugin
+├── .claude/                         # Claude Code configuration
+│   └── commands/                    # Claude Code commands
+│       └── ignistack.md             # /ignistack slash command
 ├── .claude-skills/                  # Claude Code Skills
 │   └── ignistack/                   # IgniStack integration skill
 ├── cospec-profile/                  # CoSpec AI configuration
