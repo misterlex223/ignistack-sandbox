@@ -76,6 +76,9 @@ RUN git clone --depth 1 --branch ${SQLITE_VERSION} https://github.com/WordPress/
     mkdir -p /home/flexy/wordpress/wp-content/database && \
     rm -rf /tmp/sqlite-plugin
 
+# Install mu-plugins (must-use plugins) for WordPress compatibility
+COPY docker/mu-plugins /home/flexy/wordpress/wp-content/mu-plugins
+
 # Install Composer for PHP dependency management
 RUN curl -sS https://getcomposer.org/installer | php && \
     sudo mv composer.phar /usr/local/bin/composer && \
